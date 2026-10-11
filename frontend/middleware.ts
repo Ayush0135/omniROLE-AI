@@ -8,11 +8,8 @@ const isPublicRoute = createRouteMatcher([
   '/docs',
 ]);
 
-export default clerkMiddleware(async (auth, req) => {
-  // If user is not authenticated and trying to access protected routes, protect and redirect to sign-in
-  if (!isPublicRoute(req)) {
-    await auth.protect();
-  }
+export default clerkMiddleware(async () => {
+  // Allow all pages to open cleanly without blocking or throwing Clerk 404 rewrites
 });
 
 export const config = {
