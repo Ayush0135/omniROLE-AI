@@ -12,7 +12,14 @@ export default function UserSync() {
   const [showPlanModal, setShowPlanModal] = useState(false);
 
   useEffect(() => {
-    if (!isLoaded || !isSignedIn || !user) return;
+    if (!isLoaded) return;
+    if (!isSignedIn || !user) {
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('omni_current_user_id');
+      }
+      syncedRef.current = null;
+      return;
+    }
 
     const email = user.primaryEmailAddress?.emailAddress;
     const name = user.fullName || user.username || user.firstName || 'Developer';
