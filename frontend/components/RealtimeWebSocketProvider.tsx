@@ -51,6 +51,9 @@ export default function RealtimeWebSocketProvider({ children }: { children: Reac
       return;
     }
 
+    let socket: WebSocket | null = null;
+    let reconnectTimeout: NodeJS.Timeout;
+
     const connectWs = () => {
       try {
         socket = new WebSocket(wsUrl);
