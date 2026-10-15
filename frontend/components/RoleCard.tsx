@@ -81,11 +81,12 @@ export const RoleCard: React.FC<RoleCardProps> = ({ role, onDelete, onDuplicate 
                   {role.name}
                 </h3>
                 {isSystemRole && (
-                  <ShieldCheck
-                    className="w-3.5 h-3.5 shrink-0"
-                    style={{ color: '#fbbf24', opacity: 0.75 }}
-                    title="Official System Template"
-                  />
+                  <span title="Official System Template" className="inline-flex">
+                    <ShieldCheck
+                      className="w-3.5 h-3.5 shrink-0"
+                      style={{ color: '#fbbf24', opacity: 0.75 }}
+                    />
+                  </span>
                 )}
               </div>
               {/* Provider pill */}
