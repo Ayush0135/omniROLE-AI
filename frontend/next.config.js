@@ -8,6 +8,10 @@ const nextConfig = {
         destination: 'http://54.196.14.199/api/v1/:path*',
       },
       {
+        source: '/v1/:path*',
+        destination: 'http://54.196.14.199/v1/:path*',
+      },
+      {
         source: '/health',
         destination: 'http://54.196.14.199/health',
       },
