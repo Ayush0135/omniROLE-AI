@@ -8,25 +8,28 @@ import {
   Terminal,
   Zap,
   ArrowRight,
+  Shield,
+  Layers,
+  Cpu,
+  Globe,
+  Database,
   Lock,
   Wand2,
   ChevronRight,
-  MessageSquare,
-  Globe,
   Code2,
-  Database,
+  Activity,
+  CheckCircle2,
 } from 'lucide-react';
 import { fetchRoles, enhanceSystemPrompt, Role } from '@/lib/api';
 import { RoleCard } from '@/components/RoleCard';
 import { useAuth } from '@clerk/nextjs';
 
-const PROVIDER_TICKER = [
-  { label: 'Gemini 2.5 Flash', color: '#34d399' },
-  { label: 'Groq LPU', color: '#f59e0b' },
-  { label: 'AWS Bedrock', color: '#60a5fa' },
-  { label: 'pgvector RAG', color: '#a78bfa' },
-  { label: 'Web Search', color: '#fb923c' },
-  { label: 'Python REPL', color: '#4ade80' },
+const PROVIDER_TAGS = [
+  { name: 'Gemini 2.5 Flash', icon: '✨', speed: '240ms', color: '#06b6d4' },
+  { name: 'Groq LPU (OSS 120B)', icon: '⚡', speed: '110ms', color: '#f59e0b' },
+  { name: 'AWS Bedrock', icon: '☁️', speed: '310ms', color: '#3b82f6' },
+  { name: 'pgvector RAG', icon: '📚', speed: '768-dim', color: '#a855f7' },
+  { name: 'Sandboxed Python', icon: '💻', speed: 'REPL', color: '#10b981' },
 ];
 
 export default function LandingPage() {
@@ -34,13 +37,13 @@ export default function LandingPage() {
   const [roles, setRoles] = useState<Role[]>([]);
   const [loadingRoles, setLoadingRoles] = useState(true);
 
-  // Interactive Live Prompt Enhancer Widget state
+  // Live Interactive Prompt Enhancer Widget state
   const [promptInput, setPromptInput] = useState('');
   const [enhancedOutput, setEnhancedOutput] = useState('');
   const [isEnhancing, setIsEnhancing] = useState(false);
 
   useEffect(() => {
-    async function loadSampleRoles() {
+    async function loadRoles() {
       try {
         const data = await fetchRoles();
         setRoles(data);
@@ -50,7 +53,7 @@ export default function LandingPage() {
         setLoadingRoles(false);
       }
     }
-    loadSampleRoles();
+    loadRoles();
   }, []);
 
   const handleQuickEnhance = async (e: React.FormEvent) => {
@@ -62,7 +65,7 @@ export default function LandingPage() {
       setEnhancedOutput(result);
     } catch {
       setEnhancedOutput(
-        'You are a high-precision AI Assistant specialized in rigorous analysis, contextual grounding, and production execution. You ground all responses in verified data, use structured reasoning, and produce actionable, expert-level outputs.'
+        'You are an autonomous Senior AI Persona specialized in deep analytical rigor, real-time contextual grounding, and multi-tool execution. You reason step-by-step, verify assertions against ground truth, and deliver production-ready outputs.'
       );
     } finally {
       setIsEnhancing(false);
@@ -70,175 +73,125 @@ export default function LandingPage() {
   };
 
   return (
-    <div className="space-y-20 sm:space-y-28 py-4 sm:py-8 max-w-6xl mx-auto">
+    <div className="space-y-24 sm:space-y-32 py-6 sm:py-12 max-w-7xl mx-auto">
 
-      {/* ── Hero Section ── */}
-      <section className="text-center space-y-7 pt-6 sm:pt-10 pb-4 relative">
-        {/* Large ambient orb */}
-        <div
-          className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/4 w-[500px] h-[400px] rounded-full pointer-events-none -z-10"
-          style={{
-            background:
-              'radial-gradient(ellipse, rgba(245,158,11,0.13) 0%, rgba(245,158,11,0.04) 45%, transparent 70%)',
-          }}
-        />
-        {/* Small secondary orb */}
-        <div
-          className="absolute top-1/2 right-0 w-[200px] h-[200px] rounded-full pointer-events-none -z-10"
-          style={{
-            background:
-              'radial-gradient(circle, rgba(167,139,250,0.08) 0%, transparent 70%)',
-          }}
-        />
+      {/* ── 1. Hero Section ── */}
+      <section className="text-center space-y-8 pt-8 sm:pt-14 pb-4 relative">
+        {/* Glow Spheres */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[400px] bg-gradient-to-tr from-indigo-600/20 via-purple-600/15 to-cyan-500/10 rounded-full blur-3xl pointer-events-none -z-10" />
 
-        {/* Feature Pill */}
-        <div
-          className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold"
-          style={{
-            background: 'rgba(245,158,11,0.08)',
-            border: '1px solid rgba(245,158,11,0.22)',
-            color: '#fbbf24',
-          }}
-        >
-          <Sparkles className="w-3.5 h-3.5" />
-          <span>Multi-Tenant AI Studio · Central Data Isolation · Live Grounding</span>
+        {/* Cyber Badge */}
+        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold font-mono tracking-wide cyber-pill shadow-xl">
+          <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
+          <span>CYBER-STUDIO 3.0 · CENTRAL MULTI-TENANCY · LIVE RAG</span>
         </div>
 
         {/* Main Title */}
-        <h1
-          className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black font-sora tracking-tight max-w-4xl mx-auto leading-[1.1]"
-          style={{ color: '#fef3c7' }}
-        >
-          Deploy Autonomous
-          <br />
-          <span className="gradient-text-ember">Specialist AI Personas</span>
+        <h1 className="text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-extrabold tracking-tight max-w-5xl mx-auto leading-[1.08] text-white">
+          Orchestrate Autonomous <br />
+          <span className="gradient-text-cyber">Specialist AI Personas</span>
         </h1>
 
         {/* Subtitle */}
-        <p
-          className="text-sm sm:text-base md:text-lg max-w-2xl mx-auto leading-relaxed px-4"
-          style={{ color: '#a8a29e' }}
-        >
-          Grounded with live Web Search, sandboxed Python REPL, and Vector pgvector RAG.
-          Built for high-speed API execution with strict per-user data privacy.
+        <p className="text-base sm:text-lg md:text-xl max-w-2xl mx-auto leading-relaxed text-slate-300 font-normal px-4">
+          Grounded with live Web Search, sandboxed Python code execution, and pgvector RAG.
+          Sub-110ms inference with isolated multi-user database privacy.
         </p>
 
-        {/* Action Buttons */}
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2 px-4">
+        {/* Call to Actions */}
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4 px-4">
           <Link
             href="/roles"
-            className="w-full sm:w-auto px-8 py-3.5 rounded-2xl font-bold text-sm flex items-center justify-center gap-2 transition-all hover:scale-105 btn-glow-amber"
-            style={{
-              background: 'linear-gradient(135deg, #f59e0b, #d97706)',
-              color: '#000',
-              boxShadow: '0 8px 30px rgba(245,158,11,0.35)',
-            }}
+            className="w-full sm:w-auto px-9 py-4 rounded-2xl font-bold text-sm flex items-center justify-center gap-2.5 btn-cyber-primary shadow-2xl shadow-indigo-500/30"
           >
-            <span>Launch AI Studio</span>
+            <span>Explore Persona Catalog</span>
             <ArrowRight className="w-4 h-4 stroke-[2.5]" />
           </Link>
 
           <Link
             href="/roles/new"
-            className="w-full sm:w-auto px-8 py-3.5 rounded-2xl font-bold text-sm flex items-center justify-center gap-2 transition-all hover:bg-white/[0.06]"
-            style={{
-              background: 'rgba(255,255,255,0.03)',
-              border: '1px solid rgba(245,158,11,0.2)',
-              color: '#fef3c7',
-            }}
+            className="w-full sm:w-auto px-9 py-4 rounded-2xl font-bold text-sm flex items-center justify-center gap-2.5 btn-cyber-secondary"
           >
-            <Bot className="w-4 h-4" style={{ color: '#f59e0b' }} />
+            <Bot className="w-4 h-4 text-cyan-400" />
             <span>Create Custom Persona</span>
           </Link>
         </div>
 
-        {/* Provider Trust Ticker */}
-        <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-5 pt-3 text-xs font-mono">
-          {PROVIDER_TICKER.map(({ label, color }) => (
-            <div key={label} className="flex items-center gap-1.5" style={{ color: '#78716c' }}>
-              <span
-                className="w-1.5 h-1.5 rounded-full"
-                style={{ background: color }}
-              />
-              <span>{label}</span>
+        {/* Interactive Provider Ticker */}
+        <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4 pt-6">
+          {PROVIDER_TAGS.map((tag) => (
+            <div
+              key={tag.name}
+              className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-white/[0.02] border border-white/[0.06] text-xs font-mono font-medium hover:border-indigo-500/30 transition-all"
+            >
+              <span>{tag.icon}</span>
+              <span className="text-slate-200">{tag.name}</span>
+              <span className="text-[10px] px-1.5 py-0.5 rounded-md font-bold" style={{ color: tag.color, background: `${tag.color}15` }}>
+                {tag.speed}
+              </span>
             </div>
           ))}
         </div>
       </section>
 
-      {/* ── Stats Banner ── */}
-      <section className="grid grid-cols-2 md:grid-cols-4 gap-4 px-2">
+      {/* ── 2. Metric Telemetry Banner ── */}
+      <section className="grid grid-cols-2 lg:grid-cols-4 gap-4 px-2">
         {[
-          { label: 'AI Providers', value: '6+', color: '#f59e0b' },
-          { label: 'Token Speed', value: '110ms', color: '#34d399' },
-          { label: 'Connectors', value: '5', color: '#a78bfa' },
-          { label: 'Data Isolation', value: '100%', color: '#60a5fa' },
-        ].map(({ label, value, color }) => (
+          { label: 'Token Speed', value: '110 ms', desc: 'Groq LPU ultra-low latency', color: '#06b6d4' },
+          { label: 'Model Engines', value: '6+ Types', desc: 'Gemini, Groq, Bedrock & more', color: '#818cf8' },
+          { label: 'Grounding Tools', value: '5 Tools', desc: 'Web Search, Python, pgvector', color: '#c084fc' },
+          { label: 'Tenant Isolation', value: '100% Private', desc: 'Zero cross-tenant data leaks', color: '#10b981' },
+        ].map((stat) => (
           <div
-            key={label}
-            className="text-center p-4 rounded-2xl"
-            style={{
-              background: 'rgba(17,17,27,0.75)',
-              border: '1px solid rgba(255,255,255,0.06)',
-            }}
+            key={stat.label}
+            className="cyber-card p-6 space-y-1.5"
           >
-            <div className="text-2xl sm:text-3xl font-black font-sora" style={{ color }}>
-              {value}
+            <div className="text-xs font-mono font-bold uppercase tracking-wider text-slate-400">
+              {stat.label}
             </div>
-            <div className="text-[11px] font-medium mt-0.5" style={{ color: '#78716c' }}>
-              {label}
+            <div className="text-3xl sm:text-4xl font-extrabold tracking-tight" style={{ color: stat.color }}>
+              {stat.value}
+            </div>
+            <div className="text-xs text-slate-400">
+              {stat.desc}
             </div>
           </div>
         ))}
       </section>
 
-      {/* ── Featured AI Roles Grid ── */}
-      <section className="space-y-7">
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 px-1">
+      {/* ── 3. Featured Roles Catalog Preview ── */}
+      <section className="space-y-8">
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 px-2">
           <div>
-            <div
-              className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider"
-              style={{ color: '#f59e0b' }}
-            >
+            <div className="flex items-center gap-2 text-xs font-bold font-mono uppercase tracking-wider text-cyan-400">
               <Bot className="w-4 h-4" />
-              <span>Specialized Roles</span>
+              <span>Production AI Catalog</span>
             </div>
-            <h2
-              className="text-2xl sm:text-3xl font-black font-sora mt-1"
-              style={{ color: '#fef3c7' }}
-            >
-              Pre-Configured AI Personas
+            <h2 className="text-3xl sm:text-4xl font-extrabold text-white mt-1.5">
+              Verified Specialist Personas
             </h2>
-            <p className="text-xs sm:text-sm mt-0.5" style={{ color: '#78716c' }}>
-              Ready-to-chat personas. Click any card to launch an instant conversation.
+            <p className="text-sm text-slate-400 mt-1">
+              Select any pre-configured specialist to launch an instant sandboxed conversation.
             </p>
           </div>
 
           <Link
             href="/roles"
-            className="text-xs font-bold flex items-center gap-1.5 hover:opacity-80 transition-opacity self-start sm:self-auto shrink-0"
-            style={{ color: '#f59e0b' }}
+            className="text-xs font-bold font-mono flex items-center gap-1.5 text-cyan-400 hover:text-cyan-300 transition-colors self-start sm:self-auto shrink-0"
           >
-            <span>Explore All Roles ({roles.length})</span>
+            <span>VIEW ALL PERSONAS ({roles.length})</span>
             <ChevronRight className="w-4 h-4" />
           </Link>
         </div>
 
         {loadingRoles ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[1, 2, 3].map((i) => (
-              <div
-                key={i}
-                className="h-56 rounded-2xl animate-pulse"
-                style={{
-                  background: 'rgba(17,17,27,0.7)',
-                  border: '1px solid rgba(245,158,11,0.07)',
-                }}
-              />
+              <div key={i} className="h-64 rounded-2xl bg-white/[0.02] border border-white/[0.05] animate-pulse" />
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {roles.slice(0, 6).map((role) => (
               <RoleCard key={role.id} role={role} />
             ))}
@@ -246,63 +199,40 @@ export default function LandingPage() {
         )}
       </section>
 
-      {/* ── Live Interactive Prompt Engineer Widget ── */}
-      <section
-        className="p-6 sm:p-8 rounded-3xl space-y-6 relative overflow-hidden"
-        style={{
-          background: 'rgba(17,17,27,0.88)',
-          border: '1px solid rgba(245,158,11,0.18)',
-          boxShadow: '0 8px 40px rgba(12,12,20,0.6)',
-        }}
-      >
-        {/* Background decoration */}
-        <div
-          className="absolute top-0 right-0 -mr-24 -mt-24 w-72 h-72 rounded-full pointer-events-none"
-          style={{
-            background: 'radial-gradient(circle, rgba(245,158,11,0.06) 0%, transparent 70%)',
-          }}
-        />
+      {/* ── 4. Interactive Persona Engine Terminal ── */}
+      <section className="cyber-card p-7 sm:p-10 space-y-6 relative overflow-hidden border-indigo-500/30">
+        <div className="absolute top-0 right-0 w-80 h-80 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
 
-        <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative z-10">
           <div className="space-y-1">
-            <div
-              className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-[11px] font-bold"
-              style={{ background: 'rgba(245,158,11,0.10)', color: '#fbbf24', border: '1px solid rgba(245,158,11,0.2)' }}
-            >
-              <Wand2 className="w-3.5 h-3.5" />
-              <span>Interactive Persona Engine</span>
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold font-mono cyber-pill">
+              <Wand2 className="w-3.5 h-3.5 text-cyan-400" />
+              <span>INTERACTIVE PROMPT ENHANCER</span>
             </div>
-            <h3 className="text-xl font-bold font-sora" style={{ color: '#fef3c7' }}>
-              Test the AI Prompt Enhancer Live
+            <h3 className="text-2xl font-extrabold text-white font-heading">
+              Test the Persona Engineering Engine
             </h3>
-            <p className="text-xs sm:text-sm" style={{ color: '#78716c' }}>
-              Type a short concept below and watch OmniRole AI transform it into a production system prompt.
+            <p className="text-xs sm:text-sm text-slate-300">
+              Type any role concept below and watch OmniRole AI engineer a production system prompt in real time.
             </p>
           </div>
         </div>
 
         <form onSubmit={handleQuickEnhance} className="relative z-10 space-y-4">
           <div className="flex flex-col sm:flex-row gap-3">
-            <input
-              type="text"
-              placeholder="e.g. Senior Security Auditor or Legal Researcher"
-              value={promptInput}
-              onChange={(e) => setPromptInput(e.target.value)}
-              className="flex-1 px-4 py-3 rounded-2xl text-sm focus:outline-none transition-all"
-              style={{
-                background: 'rgba(255,255,255,0.03)',
-                border: '1px solid rgba(245,158,11,0.15)',
-                color: '#fef3c7',
-              }}
-            />
+            <div className="relative flex-1">
+              <input
+                type="text"
+                placeholder="e.g. Senior Smart Contract Auditor or Quantitative Research Analyst"
+                value={promptInput}
+                onChange={(e) => setPromptInput(e.target.value)}
+                className="w-full px-5 py-4 rounded-xl text-sm bg-black/40 border border-indigo-500/25 text-white placeholder:text-slate-500 focus:border-cyan-400 transition-all font-mono"
+              />
+            </div>
             <button
               type="submit"
               disabled={isEnhancing || !promptInput.trim()}
-              className="px-7 py-3 rounded-2xl font-bold text-sm text-black flex items-center justify-center gap-2 transition-all disabled:opacity-40 hover:scale-105"
-              style={{
-                background: 'linear-gradient(135deg, #f59e0b, #d97706)',
-                boxShadow: '0 4px 16px rgba(245,158,11,0.3)',
-              }}
+              className="px-8 py-4 rounded-xl font-bold text-sm btn-cyber-primary flex items-center justify-center gap-2 transition-all disabled:opacity-40"
             >
               <Sparkles className={`w-4 h-4 ${isEnhancing ? 'animate-spin' : ''}`} />
               <span>{isEnhancing ? 'Engineering...' : 'Enhance Prompt'}</span>
@@ -310,129 +240,92 @@ export default function LandingPage() {
           </div>
 
           {enhancedOutput && (
-            <div
-              className="p-5 rounded-2xl space-y-2 text-xs font-mono leading-relaxed"
-              style={{
-                background: 'rgba(10,10,16,0.9)',
-                border: '1px solid rgba(52,211,153,0.2)',
-                color: '#34d399',
-              }}
-            >
-              <div className="flex items-center justify-between text-[11px] font-bold text-amber-400 mb-2">
-                <span>Production AI System Prompt:</span>
-                <span className="text-[10px] text-stone-500 font-medium">Auto-Generated by OmniRole Engine</span>
+            <div className="p-6 rounded-2xl bg-black/60 border border-emerald-500/30 space-y-3 font-mono text-xs leading-relaxed text-emerald-300">
+              <div className="flex items-center justify-between text-[11px] font-bold text-cyan-400 pb-2 border-b border-white/[0.08]">
+                <span>AI SYSTEM PROMPT SPECIFICATION:</span>
+                <span className="text-slate-500">Auto-Generated via OmniRole Engine</span>
               </div>
-              <p className="whitespace-pre-wrap leading-relaxed">{enhancedOutput}</p>
+              <p className="whitespace-pre-wrap">{enhancedOutput}</p>
             </div>
           )}
         </form>
       </section>
 
-      {/* ── Feature Pillar Highlights ── */}
-      <section className="grid grid-cols-1 md:grid-cols-3 gap-5">
+      {/* ── 5. Core Pillars ── */}
+      <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {[
           {
             icon: Lock,
             title: 'Central Multi-Tenant Isolation',
-            desc: 'Your custom personas, private conversations, and API credentials are tied strictly to your account. Zero cross-user data leakage.',
-            color: '#f59e0b',
+            desc: 'Every custom persona, conversation history, and API key is partitioned strictly per Clerk account with encrypted token storage.',
+            color: '#06b6d4',
           },
           {
             icon: Zap,
-            title: 'Live Grounding Engines',
-            desc: 'Personas don\'t hallucinate. Connect Web Search, sandboxed Python code execution, and pgvector knowledge bases with a single toggle.',
-            color: '#34d399',
+            title: 'Multi-Connector Grounding',
+            desc: 'Zero hallucination. Personas execute live Google Search, sandboxed Python code snippets, and Supabase pgvector retrieval dynamically.',
+            color: '#a855f7',
           },
           {
             icon: Terminal,
-            title: 'Developer REST API',
-            desc: 'Integrate your personas into any external backend, CLI, or frontend with secured SHA-256 tokens and streaming responses.',
-            color: '#a78bfa',
+            title: 'High-Throughput REST API',
+            desc: 'Deploy personas directly into external webhooks, bots, and backends using SHA-256 secured bearer tokens with SSE streaming.',
+            color: '#10b981',
           },
-        ].map(({ icon: Icon, title, desc, color }) => (
-          <div
-            key={title}
-            className="p-6 rounded-3xl space-y-3 shine-hover transition-all duration-300 hover:-translate-y-1"
-            style={{
-              background: 'rgba(17,17,27,0.75)',
-              border: '1px solid rgba(255,255,255,0.06)',
-              boxShadow: '0 2px 16px rgba(12,12,20,0.4)',
-            }}
-          >
+        ].map((pillar) => {
+          const Icon = pillar.icon;
+          return (
             <div
-              className="w-10 h-10 rounded-2xl flex items-center justify-center"
-              style={{ background: `${color}18`, color }}
+              key={pillar.title}
+              className="cyber-card p-8 space-y-4"
             >
-              <Icon className="w-5 h-5" />
+              <div
+                className="w-12 h-12 rounded-2xl flex items-center justify-center"
+                style={{ background: `${pillar.color}15`, border: `1px solid ${pillar.color}35`, color: pillar.color }}
+              >
+                <Icon className="w-6 h-6" />
+              </div>
+              <h4 className="text-lg font-bold text-white font-heading">
+                {pillar.title}
+              </h4>
+              <p className="text-xs text-slate-300/80 leading-relaxed">
+                {pillar.desc}
+              </p>
             </div>
-            <h4 className="text-base font-bold font-sora" style={{ color: '#fef3c7' }}>
-              {title}
-            </h4>
-            <p className="text-xs leading-relaxed" style={{ color: '#a8a29e' }}>
-              {desc}
-            </p>
-          </div>
-        ))}
+          );
+        })}
       </section>
 
-      {/* ── Final Call to Action ── */}
-      <section
-        className="text-center py-14 sm:py-20 rounded-3xl space-y-5 px-4 relative overflow-hidden"
-        style={{
-          background: 'linear-gradient(160deg, rgba(20,20,32,0.95), rgba(12,12,20,0.98))',
-          border: '1px solid rgba(245,158,11,0.15)',
-          boxShadow: '0 8px 48px rgba(12,12,20,0.6)',
-        }}
-      >
-        <div
-          className="absolute inset-0 pointer-events-none"
-          style={{
-            background:
-              'radial-gradient(ellipse at center, rgba(245,158,11,0.09) 0%, transparent 65%)',
-          }}
-        />
-        <div className="relative z-10 space-y-5 max-w-xl mx-auto">
-          <div
-            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold"
-            style={{
-              background: 'rgba(245,158,11,0.08)',
-              border: '1px solid rgba(245,158,11,0.2)',
-              color: '#fbbf24',
-            }}
-          >
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>Start Free · No Credit Card Required</span>
+      {/* ── 6. Final Call to Action ── */}
+      <section className="text-center py-16 sm:py-24 rounded-3xl cyber-card space-y-6 px-6 relative overflow-hidden border-indigo-500/40">
+        <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/10 via-purple-500/10 to-cyan-500/10 pointer-events-none" />
+
+        <div className="relative z-10 space-y-5 max-w-2xl mx-auto">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold cyber-pill">
+            <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
+            <span>START FREE · NO CREDIT CARD REQUIRED</span>
           </div>
 
-          <h3 className="text-2xl sm:text-4xl font-black font-sora" style={{ color: '#fef3c7' }}>
-            Ready to Build Your AI Workforce?
+          <h3 className="text-3xl sm:text-5xl font-extrabold text-white font-heading">
+            Build Your Autonomous AI Workforce
           </h3>
-          <p className="text-sm sm:text-base" style={{ color: '#a8a29e' }}>
-            Start with our verified system templates or architect your first bespoke AI persona right now.
+          <p className="text-sm sm:text-base text-slate-300">
+            Start with our verified specialist roles or architect your first bespoke AI persona right now.
           </p>
 
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
             <Link
               href="/roles/new"
-              className="inline-flex items-center gap-2 px-8 py-3.5 rounded-2xl font-bold text-sm text-black shadow-xl transition-all hover:scale-105 btn-glow-amber"
-              style={{
-                background: 'linear-gradient(135deg, #f59e0b, #d97706)',
-                boxShadow: '0 8px 28px rgba(245,158,11,0.35)',
-              }}
+              className="px-9 py-4 rounded-2xl font-bold text-sm btn-cyber-primary flex items-center justify-center gap-2"
             >
               <Bot className="w-4 h-4" />
-              <span>Create Your First Role</span>
+              <span>Create Your First Persona</span>
             </Link>
             <Link
               href="/pricing"
-              className="inline-flex items-center gap-2 px-8 py-3.5 rounded-2xl font-bold text-sm transition-all hover:bg-white/[0.07]"
-              style={{
-                background: 'rgba(255,255,255,0.04)',
-                border: '1px solid rgba(255,255,255,0.1)',
-                color: '#d6d3d1',
-              }}
+              className="px-9 py-4 rounded-2xl font-bold text-sm btn-cyber-secondary flex items-center justify-center gap-2"
             >
-              <span>View Pricing</span>
+              <span>View Plans & Upgrades</span>
               <ArrowRight className="w-4 h-4" />
             </Link>
           </div>

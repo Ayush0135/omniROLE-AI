@@ -15,6 +15,7 @@ import {
   Plus,
   Menu,
   X,
+  Sparkles,
 } from 'lucide-react';
 import { SignInButton, SignUpButton, UserButton, useAuth } from '@clerk/nextjs';
 import { Logo } from '@/components/Logo';
@@ -43,30 +44,37 @@ export const Navbar = () => {
   }, []);
 
   return (
-    <header className="sticky top-0 z-40 w-full">
+    <header className="sticky top-0 z-40 w-full transition-all duration-300">
       <div
-        className="transition-all duration-300"
+        className="w-full transition-all duration-300"
         style={{
           background: scrolled
-            ? 'rgba(12,12,20,0.94)'
-            : 'rgba(12,12,20,0.72)',
-          backdropFilter: 'blur(28px)',
-          WebkitBackdropFilter: 'blur(28px)',
-          borderBottom: scrolled
-            ? '1px solid rgba(245,158,11,0.14)'
-            : '1px solid rgba(245,158,11,0.07)',
-          boxShadow: scrolled ? '0 4px 32px rgba(12,12,20,0.5)' : 'none',
+            ? 'rgba(4, 5, 13, 0.92)'
+            : 'rgba(4, 5, 13, 0.75)',
+          backdropFilter: 'blur(24px)',
+          WebkitBackdropFilter: 'blur(24px)',
+          borderBottom: '1px solid rgba(99, 102, 241, 0.16)',
+          boxShadow: scrolled
+            ? '0 8px 32px rgba(0, 0, 0, 0.5), 0 1px 0 rgba(255, 255, 255, 0.05) inset'
+            : 'none',
         }}
       >
-        <div className="max-w-7xl mx-auto px-5 md:px-8">
-          <div className="flex items-center justify-between h-15" style={{ height: '60px' }}>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
             {/* Logo */}
-            <Link href="/" className="flex items-center gap-2.5 shrink-0 group">
-              <Logo size="md" showText={true} />
+            <Link href="/" className="flex items-center gap-3 shrink-0 group">
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-500 via-purple-500 to-cyan-400 p-[1.5px] shadow-lg shadow-indigo-500/30 group-hover:shadow-cyan-400/30 transition-all duration-300 flex items-center justify-center">
+                <div className="w-full h-full bg-[#0a0d1a] rounded-[10px] flex items-center justify-center">
+                  <Sparkles className="w-4 h-4 text-cyan-400 group-hover:rotate-12 transition-transform duration-300" />
+                </div>
+              </div>
+              <span className="font-extrabold text-lg tracking-tight font-heading text-white">
+                OmniRole <span className="gradient-text-cyan font-black">AI</span>
+              </span>
             </Link>
 
             {/* Desktop Nav Links */}
-            <nav className="hidden lg:flex items-center gap-0.5">
+            <nav className="hidden lg:flex items-center gap-1 bg-white/[0.02] p-1 rounded-2xl border border-white/[0.05]">
               {navLinks.map((item) => {
                 const isActive =
                   pathname === item.href ||
@@ -75,20 +83,18 @@ export const Navbar = () => {
                   <Link
                     key={item.href}
                     href={item.href}
-                    className="relative px-3 py-1.5 rounded-xl text-xs font-semibold transition-all duration-200 group"
+                    className="relative px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all duration-200"
                     style={{
-                      color: isActive ? '#fbbf24' : '#a8a29e',
-                      background: isActive ? 'rgba(245,158,11,0.09)' : 'transparent',
+                      color: isActive ? '#ffffff' : '#94a3b8',
+                      background: isActive
+                        ? 'linear-gradient(135deg, rgba(99, 102, 241, 0.25), rgba(139, 92, 246, 0.15))'
+                        : 'transparent',
+                      border: isActive
+                        ? '1px solid rgba(99, 102, 241, 0.35)'
+                        : '1px solid transparent',
                     }}
                   >
-                    {/* Active underline */}
-                    {isActive && (
-                      <span
-                        className="absolute bottom-0 left-3 right-3 h-[2px] rounded-full"
-                        style={{ background: 'linear-gradient(90deg, #f59e0b, #d97706)' }}
-                      />
-                    )}
-                    <span className="group-hover:text-amber-200 transition-colors">
+                    <span className="hover:text-white transition-colors">
                       {item.label}
                     </span>
                   </Link>
@@ -96,54 +102,33 @@ export const Navbar = () => {
               })}
             </nav>
 
-            {/* Right Actions */}
-            <div className="flex items-center gap-2.5">
-              {/* Live Badge */}
-              <div
-                className="hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold"
-                style={{
-                  background: 'rgba(52,211,153,0.08)',
-                  border: '1px solid rgba(52,211,153,0.2)',
-                  color: '#34d399',
-                }}
-              >
+            {/* Right Controls */}
+            <div className="flex items-center gap-3">
+              {/* Telemetry Indicator */}
+              <div className="hidden md:flex items-center gap-2 px-3 py-1 rounded-full text-[11px] font-semibold font-mono bg-emerald-500/10 border border-emerald-500/25 text-emerald-400">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                <span>Live</span>
+                <span>ACTIVE · 110ms</span>
               </div>
 
-              {/* New Role CTA */}
+              {/* Create Role CTA */}
               <Link
                 href="/roles/new"
-                className="hidden sm:flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-black text-xs font-bold shadow-lg transition-all hover:scale-105 btn-glow-amber"
-                style={{
-                  background: 'linear-gradient(135deg, #f59e0b, #d97706)',
-                  boxShadow: '0 4px 16px rgba(245,158,11,0.3)',
-                }}
+                className="hidden sm:flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold btn-cyber-primary"
               >
                 <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
-                <span>New Role</span>
+                <span>New Persona</span>
               </Link>
 
               {/* Auth Controls */}
               {isLoaded && !isSignedIn && (
                 <div className="flex items-center gap-2">
                   <SignInButton mode="modal">
-                    <button
-                      className="px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-colors"
-                      style={{
-                        background: 'rgba(255,255,255,0.04)',
-                        border: '1px solid rgba(245,158,11,0.12)',
-                        color: '#d6d3d1',
-                      }}
-                    >
+                    <button className="px-3.5 py-1.5 rounded-xl text-xs font-semibold text-slate-300 hover:text-white hover:bg-white/[0.05] border border-white/[0.08] transition-all">
                       Sign In
                     </button>
                   </SignInButton>
                   <SignUpButton mode="modal">
-                    <button
-                      className="px-3.5 py-1.5 rounded-xl text-black text-xs font-bold transition-all hover:opacity-90"
-                      style={{ background: 'linear-gradient(135deg, #f59e0b, #d97706)' }}
-                    >
+                    <button className="px-3.5 py-1.5 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 hover:opacity-90 shadow-lg shadow-indigo-500/25 transition-all">
                       Sign Up
                     </button>
                   </SignUpButton>
@@ -155,7 +140,7 @@ export const Navbar = () => {
                   appearance={{
                     elements: {
                       avatarBox:
-                        'w-8 h-8 rounded-xl border border-amber-500/30 shadow-md shadow-amber-500/10',
+                        'w-8 h-8 rounded-xl border border-indigo-500/40 shadow-md shadow-indigo-500/20',
                     },
                   }}
                 />
@@ -164,8 +149,8 @@ export const Navbar = () => {
               {/* Mobile menu toggle */}
               <button
                 onClick={() => setMobileOpen(!mobileOpen)}
-                className="lg:hidden p-2 rounded-xl transition-colors"
-                style={{ color: '#a8a29e' }}
+                className="lg:hidden p-2 rounded-xl text-slate-400 hover:text-white hover:bg-white/[0.06] transition-colors"
+                aria-label="Toggle menu"
               >
                 {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
               </button>
@@ -176,14 +161,8 @@ export const Navbar = () => {
 
       {/* Mobile Nav Dropdown */}
       {mobileOpen && (
-        <div
-          style={{
-            background: 'rgba(12,12,20,0.97)',
-            backdropFilter: 'blur(28px)',
-            borderBottom: '1px solid rgba(245,158,11,0.12)',
-          }}
-        >
-          <nav className="max-w-7xl mx-auto px-5 py-4 space-y-1">
+        <div className="lg:hidden bg-[#0a0d1a]/98 backdrop-blur-3xl border-b border-indigo-500/20 shadow-2xl">
+          <nav className="max-w-7xl mx-auto px-5 py-4 space-y-1.5">
             {navLinks.map((item) => {
               const isActive =
                 pathname === item.href ||
@@ -194,14 +173,13 @@ export const Navbar = () => {
                   key={item.href}
                   href={item.href}
                   onClick={() => setMobileOpen(false)}
-                  className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all"
-                  style={{
-                    color: isActive ? '#fbbf24' : '#a8a29e',
-                    background: isActive ? 'rgba(245,158,11,0.09)' : 'transparent',
-                    border: isActive ? '1px solid rgba(245,158,11,0.18)' : '1px solid transparent',
-                  }}
+                  className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all ${
+                    isActive
+                      ? 'text-white bg-indigo-500/20 border border-indigo-500/35'
+                      : 'text-slate-400 hover:text-white hover:bg-white/[0.04]'
+                  }`}
                 >
-                  <Icon className="w-4 h-4 shrink-0" />
+                  <Icon className="w-4 h-4 text-indigo-400" />
                   {item.label}
                 </Link>
               );
@@ -209,11 +187,10 @@ export const Navbar = () => {
             <Link
               href="/roles/new"
               onClick={() => setMobileOpen(false)}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-black text-sm font-bold mt-2"
-              style={{ background: 'linear-gradient(135deg, #f59e0b, #d97706)' }}
+              className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-white text-sm font-bold btn-cyber-primary mt-3"
             >
               <Plus className="w-4 h-4" />
-              Create New Role
+              Create Custom Persona
             </Link>
           </nav>
         </div>
