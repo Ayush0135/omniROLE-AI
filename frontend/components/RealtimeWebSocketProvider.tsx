@@ -45,8 +45,11 @@ export default function RealtimeWebSocketProvider({ children }: { children: Reac
     const clientType = window.location.pathname.startsWith('/admin') ? 'admin' : 'user';
     const wsUrl = `ws://localhost:8000/ws/live?client_type=${clientType}&user_id=${encodeURIComponent(userEmail)}`;
 
-    let socket: WebSocket | null = null;
-    let reconnectTimeout: NodeJS.Timeout;
+    // On HTTPS origins (production Vercel), plain ws:// is blocked by browser mixed-content policy
+    if (typeof window !== 'undefined' && window.location.protocol === 'https:') {
+      console.log('⚡ [Telemetry] Live telemetry standby (HTTPS mode)');
+      return;
+    }
 
     const connectWs = () => {
       try {

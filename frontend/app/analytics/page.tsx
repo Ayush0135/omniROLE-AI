@@ -12,7 +12,7 @@ export default function AnalyticsPage() {
 
   const [rlData, setRlData] = useState<any>(null);
 
-  const BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+  const BASE = typeof window !== 'undefined' ? '' : (process.env.NEXT_PUBLIC_API_URL || 'http://54.196.14.199');
 
   const loadMetrics = async () => {
     setLoading(true);
