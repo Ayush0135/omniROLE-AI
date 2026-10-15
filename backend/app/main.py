@@ -14,6 +14,10 @@ Base.metadata.create_all(bind=engine)
 # Auto-migrate columns if missing in SQLite
 with engine.connect() as conn:
     for col_sql in [
+        "ALTER TABLE roles ADD COLUMN user_id VARCHAR",
+        "ALTER TABLE api_keys ADD COLUMN user_id VARCHAR",
+        "ALTER TABLE conversations ADD COLUMN user_id VARCHAR",
+        "ALTER TABLE usage_records ADD COLUMN user_id VARCHAR",
         "ALTER TABLE roles ADD COLUMN connectors JSON DEFAULT '[\"vector_rag\", \"web_search\", \"code_executor\"]'",
         "ALTER TABLE users ADD COLUMN is_admin BOOLEAN DEFAULT 0",
         "ALTER TABLE users ADD COLUMN status VARCHAR DEFAULT 'active'",
@@ -41,7 +45,7 @@ app = FastAPI(
     description="OmniRole AI - Specialized AI Expert Creation & Orchestration Platform",
 )
 
-# Configure CORS — wildcard + credentials is rejected by browsers, must use explicit origins
+# Configure CORS — allow explicit origins + wildcard Vercel previews
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
@@ -49,9 +53,11 @@ app.add_middleware(
         "http://127.0.0.1:3000",
         "http://localhost:3001",
         "http://127.0.0.1:3001",
+        "https://omni-role-ai-xz8z.vercel.app",
         "https://omini-ai.vercel.app",
-        "https://*.vercel.app",
+        "https://omini.work.gd",
     ],
+    allow_origin_regex=r"^https:\/\/.*\.vercel\.app$",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

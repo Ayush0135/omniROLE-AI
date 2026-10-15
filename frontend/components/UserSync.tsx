@@ -18,6 +18,9 @@ export default function UserSync() {
     const name = user.fullName || user.username || user.firstName || 'Developer';
     const clerkId = user.id;
 
+    // Store user ID centrally in localStorage for API requests
+    localStorage.setItem('omni_current_user_id', clerkId);
+
     // Check if new user registration needs plan onboarding prompt
     const hasChosenPlan = localStorage.getItem(`omni_plan_chosen_${clerkId}`);
     if (!hasChosenPlan) {
@@ -35,6 +38,7 @@ export default function UserSync() {
         name: name,
       }).catch((err) => console.error('User sync error:', err));
     }
+
   }, [user, isSignedIn, isLoaded]);
 
   const handleSelectPlan = (planName: string) => {

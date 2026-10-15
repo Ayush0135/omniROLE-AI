@@ -51,13 +51,27 @@ def slugify(text: str) -> str:
     return re.sub(r"[\s_-]+", "-", text)
 
 
+from sqlalchemy import or_
+from app.api.deps import get_optional_user
+
+
 @router.get("", response_model=List[RoleResponse])
 def list_roles(
     q: Optional[str] = Query(None, description="Search query for role name, description, or expertise"),
     status: Optional[str] = Query(None, description="Filter by status: active, draft, archived"),
+    user_id: Optional[str] = Depends(get_optional_user),
     db: Session = Depends(get_db),
 ):
     query = db.query(Role)
+    
+    # Enforce multi-tenant user isolation:
+    # Users can view default platform roles (user_id IS NULL) + their own custom created roles
+    if user_id:
+        query = query.filter(or_(Role.user_id == user_id, Role.user_id.is_(None)))
+    else:
+        # Unauthenticated users only see public system default roles
+        query = query.filter(Role.user_id.is_(None))
+
     if status:
         query = query.filter(Role.status == status)
     if q:
@@ -71,16 +85,23 @@ def list_roles(
 
 
 @router.post("", response_model=RoleResponse, status_code=status.HTTP_201_CREATED)
-async def create_role(role_in: RoleCreate, db: Session = Depends(get_db)):
+async def create_role(
+    role_in: RoleCreate,
+    user_id: Optional[str] = Depends(get_optional_user),
+    db: Session = Depends(get_db),
+):
     from app.models import User
     
-    # Check if Pro / Enterprise plan is active, else enforce Free Tier 2 Role Limit
-    pro_user = db.query(User).filter((User.plan == "Pro Developer") | (User.plan == "Enterprise")).first()
-    total_roles = db.query(Role).count()
-    if not pro_user and total_roles >= 2:
+    # Check current user's plan if authenticated
+    user = db.query(User).filter(User.id == user_id).first() if user_id else None
+    is_pro = user and user.plan in ["Pro Developer", "Enterprise"]
+    
+    # Calculate how many custom roles this specific user has created
+    user_role_count = db.query(Role).filter(Role.user_id == user_id).count() if user_id else db.query(Role).filter(Role.user_id.is_(None)).count()
+    if not is_pro and user_role_count >= 2:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Free Tier is limited to creating a maximum of 2 AI Roles. Please upgrade to Pro for 25 AI Roles."
+            detail="Free Tier allows creating up to 2 custom AI Roles. Please upgrade to Pro Developer for 25 roles."
         )
 
     base_slug = slugify(role_in.name)
@@ -92,12 +113,12 @@ async def create_role(role_in: RoleCreate, db: Session = Depends(get_db)):
         slug = f"{base_slug}-{counter}"
         counter += 1
 
-    # Force Web Search connector only for Free Tier users
     connectors = role_in.connectors or ["web_search"]
-    if not pro_user:
+    if not is_pro:
         connectors = ["web_search"]
 
     role = Role(
+        user_id=user_id,
         name=role_in.name,
         slug=slug,
         description=role_in.description,
@@ -116,6 +137,7 @@ async def create_role(role_in: RoleCreate, db: Session = Depends(get_db)):
     db.add(role)
     db.commit()
     db.refresh(role)
+
 
     # Direct Real-Time Sync to Supabase PostgreSQL
     await SupabaseSyncEngine.sync_role({
@@ -155,7 +177,12 @@ def get_role(id_or_slug: str, db: Session = Depends(get_db)):
 
 
 @router.put("/{id_or_slug}", response_model=RoleResponse)
-async def update_role(id_or_slug: str, role_in: RoleUpdate, db: Session = Depends(get_db)):
+async def update_role(
+    id_or_slug: str,
+    role_in: RoleUpdate,
+    user_id: Optional[str] = Depends(get_optional_user),
+    db: Session = Depends(get_db),
+):
     role = (
         db.query(Role)
         .filter((Role.id == id_or_slug) | (Role.slug == id_or_slug))
@@ -165,6 +192,18 @@ async def update_role(id_or_slug: str, role_in: RoleUpdate, db: Session = Depend
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"AI Role '{id_or_slug}' not found.",
+        )
+
+    # Prevent editing default platform templates or another user's role
+    if role.user_id is None:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="System template roles cannot be modified. Duplicate it to create your own editable copy."
+        )
+    if user_id and role.user_id != user_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have permission to modify this AI Role."
         )
 
     update_data = role_in.model_dump(exclude_unset=True)
@@ -205,7 +244,11 @@ async def update_role(id_or_slug: str, role_in: RoleUpdate, db: Session = Depend
 
 
 @router.delete("/{id_or_slug}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_role(id_or_slug: str, db: Session = Depends(get_db)):
+async def delete_role(
+    id_or_slug: str,
+    user_id: Optional[str] = Depends(get_optional_user),
+    db: Session = Depends(get_db),
+):
     role = (
         db.query(Role)
         .filter((Role.id == id_or_slug) | (Role.slug == id_or_slug))
@@ -215,6 +258,17 @@ async def delete_role(id_or_slug: str, db: Session = Depends(get_db)):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"AI Role '{id_or_slug}' not found.",
+        )
+
+    if role.user_id is None:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="System template roles cannot be deleted."
+        )
+    if user_id and role.user_id != user_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have permission to delete this AI Role."
         )
 
     # Safely delete associated usage records, connector logs, and conversations
@@ -232,3 +286,4 @@ async def delete_role(id_or_slug: str, db: Session = Depends(get_db)):
 
     await SupabaseSyncEngine.delete_role(role.id)
     return None
+

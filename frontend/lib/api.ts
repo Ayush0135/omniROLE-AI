@@ -1,4 +1,4 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
 export interface Role {
   id: string;
@@ -106,24 +106,47 @@ export interface Announcement {
   created_at: string;
 }
 
-export async function fetchRoles(query?: string, statusFilter?: string): Promise<Role[]> {
+export function getAuthHeaders(extraHeaders: Record<string, string> = {}): Record<string, string> {
+  const headers: Record<string, string> = { ...extraHeaders };
+  if (typeof window !== 'undefined') {
+    const userId = localStorage.getItem('omni_current_user_id');
+    if (userId) {
+      headers['X-User-Id'] = userId;
+    }
+  }
+  return headers;
+}
+
+export async function fetchRoles(query?: string, statusFilter?: string, userId?: string): Promise<Role[]> {
   const params = new URLSearchParams();
-  if (query) params.append('query', query);
+  if (query) params.append('q', query);
   if (statusFilter) params.append('status', statusFilter);
 
-  const res = await fetch(`${API_BASE_URL}/api/v1/roles?${params.toString()}`, { cache: 'no-store' });
+  const headers = getAuthHeaders();
+  if (userId) headers['X-User-Id'] = userId;
+
+  const res = await fetch(`${API_BASE_URL}/api/v1/roles?${params.toString()}`, {
+    cache: 'no-store',
+    headers,
+  });
   if (!res.ok) throw new Error('Failed to fetch AI roles');
   return res.json();
 }
 
 export async function fetchRoleBySlug(slug: string): Promise<Role> {
-  const res = await fetch(`${API_BASE_URL}/api/v1/roles/${slug}`, { cache: 'no-store' });
+  const res = await fetch(`${API_BASE_URL}/api/v1/roles/${slug}`, {
+    cache: 'no-store',
+    headers: getAuthHeaders(),
+  });
   if (!res.ok) throw new Error('Role not found');
   return res.json();
 }
 
 export async function fetchRoleById(id: string): Promise<Role> {
-  const res = await fetch(`${API_BASE_URL}/api/v1/roles/${id}`, { cache: 'no-store' });
+  const res = await fetch(`${API_BASE_URL}/api/v1/roles/${id}`, {
+    cache: 'no-store',
+    headers: getAuthHeaders(),
+  });
   if (!res.ok) throw new Error('Role not found');
   return res.json();
 }
@@ -131,7 +154,7 @@ export async function fetchRoleById(id: string): Promise<Role> {
 export async function createRole(roleData: Partial<Role>): Promise<Role> {
   const res = await fetch(`${API_BASE_URL}/api/v1/roles`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
     body: JSON.stringify(roleData),
   });
   if (!res.ok) {
@@ -144,19 +167,29 @@ export async function createRole(roleData: Partial<Role>): Promise<Role> {
 export async function updateRole(id: string, roleData: Partial<Role>): Promise<Role> {
   const res = await fetch(`${API_BASE_URL}/api/v1/roles/${id}`, {
     method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
+    headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
     body: JSON.stringify(roleData),
   });
-  if (!res.ok) throw new Error('Failed to update role');
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.detail || 'Failed to update role');
+  }
   return res.json();
 }
 
 export async function deleteRole(id: string): Promise<any> {
-  const res = await fetch(`${API_BASE_URL}/api/v1/roles/${id}`, { method: 'DELETE' });
-  if (!res.ok) throw new Error('Failed to delete role');
+  const res = await fetch(`${API_BASE_URL}/api/v1/roles/${id}`, {
+    method: 'DELETE',
+    headers: getAuthHeaders(),
+  });
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.detail || 'Failed to delete role');
+  }
   if (res.status === 204) return { success: true };
   return res.json();
 }
+
 
 export async function sendChatMessage(
   roleSlug: string,
@@ -165,7 +198,7 @@ export async function sendChatMessage(
   history?: any[],
   apiKey?: string
 ): Promise<ChatResponse> {
-  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  const headers = getAuthHeaders({ 'Content-Type': 'application/json' });
   if (apiKey) headers['X-API-Key'] = apiKey;
 
   const res = await fetch(`${API_BASE_URL}/api/v1/roles/${roleSlug}/chat`, {
@@ -184,7 +217,10 @@ export async function sendChatMessage(
 export const chatWithRole = sendChatMessage;
 
 export async function fetchAPIKeys(): Promise<APIKey[]> {
-  const res = await fetch(`${API_BASE_URL}/api/v1/api-keys`, { cache: 'no-store' });
+  const res = await fetch(`${API_BASE_URL}/api/v1/api-keys`, {
+    cache: 'no-store',
+    headers: getAuthHeaders(),
+  });
   if (!res.ok) throw new Error('Failed to fetch API keys');
   return res.json();
 }
@@ -192,7 +228,7 @@ export async function fetchAPIKeys(): Promise<APIKey[]> {
 export async function createAPIKey(name: string): Promise<APIKey> {
   const res = await fetch(`${API_BASE_URL}/api/v1/api-keys`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
     body: JSON.stringify({ name }),
   });
   if (!res.ok) throw new Error('Failed to create API key');
@@ -200,11 +236,15 @@ export async function createAPIKey(name: string): Promise<APIKey> {
 }
 
 export async function revokeAPIKey(id: string): Promise<any> {
-  const res = await fetch(`${API_BASE_URL}/api/v1/api-keys/${id}`, { method: 'DELETE' });
+  const res = await fetch(`${API_BASE_URL}/api/v1/api-keys/${id}`, {
+    method: 'DELETE',
+    headers: getAuthHeaders(),
+  });
   if (!res.ok) throw new Error('Failed to revoke API key');
   if (res.status === 204) return { success: true };
   return res.json();
 }
+
 
 export async function enhanceSystemPrompt(roleName: string, shortPrompt: string): Promise<string> {
   const res = await fetch(`${API_BASE_URL}/api/v1/roles/enhance-prompt`, {
@@ -253,8 +293,27 @@ export async function submitFeedbackSignal(
 
   const res = await fetch(`${API_BASE_URL}/api/v1/rl/feedback`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
     body: JSON.stringify(bodyPayload),
+  });
+  if (!res.ok) return null;
+  return res.json();
+}
+
+export async function submitStarRating(payload: {
+  role_id: string;
+  query_text: string;
+  response_text: string;
+  star_rating: number;
+  message_id?: string;
+  response_style?: string | null;
+  temperature?: number | null;
+  connector_idx?: number;
+}): Promise<any> {
+  const res = await fetch(`${API_BASE_URL}/api/v1/rl/rate`, {
+    method: 'POST',
+    headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+    body: JSON.stringify(payload),
   });
   if (!res.ok) return null;
   return res.json();

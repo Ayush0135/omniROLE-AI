@@ -1,5 +1,6 @@
 import asyncio
 from datetime import datetime
+from typing import Optional, List, Dict, Any
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from app.database import get_db
@@ -8,6 +9,8 @@ from app.schemas import ChatRequest, ChatResponse
 from app.engine.orchestrator import SearchOrchestrator
 from app.engine.supabase_sync import SupabaseSyncEngine
 
+from app.api.deps import get_optional_user
+
 router = APIRouter(tags=["Chat Execution"])
 
 
@@ -15,6 +18,7 @@ router = APIRouter(tags=["Chat Execution"])
 async def chat_with_role(
     id_or_slug: str,
     chat_in: ChatRequest,
+    user_id: Optional[str] = Depends(get_optional_user),
     db: Session = Depends(get_db),
 ):
     role = (
@@ -32,10 +36,10 @@ async def chat_with_role(
     from app.models import User, UsageRecord
     from sqlalchemy import func
     
-    # Check if a Pro/Enterprise user exists (mocking authenticated user for now)
-    user = db.query(User).filter((User.plan == "Pro Developer") | (User.plan == "Enterprise")).first()
+    # Check if a Pro/Enterprise user exists
+    user = db.query(User).filter(User.id == user_id).first() if user_id else None
     
-    if not user:
+    if not user or user.plan not in ["Pro Developer", "Enterprise"]:
         # Free Tier: Enforce 20,000 daily token limit
         today_start = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
         daily_tokens = db.query(func.sum(UsageRecord.tokens_total)).filter(UsageRecord.created_at >= today_start).scalar() or 0
@@ -57,19 +61,21 @@ async def chat_with_role(
     # 1. Manage Conversation
     conversation = None
     if chat_in.conversation_id:
-        conversation = (
-            db.query(Conversation)
-            .filter(Conversation.id == chat_in.conversation_id, Conversation.role_id == role.id)
-            .first()
-        )
+        conv_query = db.query(Conversation).filter(Conversation.id == chat_in.conversation_id, Conversation.role_id == role.id)
+        if user_id:
+            conv_query = conv_query.filter(Conversation.user_id == user_id)
+        conversation = conv_query.first()
+
     if not conversation:
         conversation = Conversation(
             role_id=role.id,
+            user_id=user_id,
             title=chat_in.message[:40] if chat_in.message else "Conversation",
         )
         db.add(conversation)
         db.commit()
         db.refresh(conversation)
+
 
     # 2. Save User Message
     user_msg = Message(

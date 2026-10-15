@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   backend:
     build:
@@ -7,12 +5,8 @@ services:
       dockerfile: Dockerfile
     ports:
       - "8000:8000"
-    environment:
-      - DATABASE_URL=sqlite:///./omnirole.db
-      - LLM_PROVIDER=mock
-      - LLM_BASE_URL=https://api.openai.com/v1
-      - LLM_MODEL=qwen-2.5-72b-instruct
-      - SECRET_KEY=omnirole_docker_secret_key_998877
+    env_file:
+      - ./backend/.env
     volumes:
       - backend_data:/app
 
@@ -22,8 +16,10 @@ services:
       dockerfile: Dockerfile
     ports:
       - "3000:3000"
+    env_file:
+      - ./frontend/.env
     environment:
-      - NEXT_PUBLIC_API_URL=http://localhost:8000
+      - NEXT_PUBLIC_API_URL=https://omini.work.gd
     depends_on:
       - backend
 

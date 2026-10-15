@@ -1,6 +1,6 @@
 import secrets
 import hashlib
-from typing import List
+from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from app.database import get_db
@@ -10,14 +10,28 @@ from app.schemas import APIKeyCreate, APIKeyResponse
 router = APIRouter(prefix="/api-keys", tags=["API Keys"])
 
 
+from app.api.deps import get_optional_user
+
+
 @router.get("", response_model=List[APIKeyResponse])
-def list_api_keys(db: Session = Depends(get_db)):
-    keys = db.query(APIKey).order_by(APIKey.created_at.desc()).all()
-    return keys
+def list_api_keys(
+    user_id: Optional[str] = Depends(get_optional_user),
+    db: Session = Depends(get_db),
+):
+    query = db.query(APIKey)
+    if user_id:
+        query = query.filter(APIKey.user_id == user_id)
+    else:
+        query = query.filter(APIKey.user_id.is_(None))
+    return query.order_by(APIKey.created_at.desc()).all()
 
 
 @router.post("", response_model=APIKeyResponse, status_code=status.HTTP_201_CREATED)
-def create_api_key(key_in: APIKeyCreate, db: Session = Depends(get_db)):
+def create_api_key(
+    key_in: APIKeyCreate,
+    user_id: Optional[str] = Depends(get_optional_user),
+    db: Session = Depends(get_db),
+):
     # Generate secure random key: omni_live_<random32>
     random_part = secrets.token_hex(16)
     raw_key = f"omni_live_{random_part}"
@@ -25,6 +39,7 @@ def create_api_key(key_in: APIKeyCreate, db: Session = Depends(get_db)):
     key_hash = hashlib.sha256(raw_key.encode("utf-8")).hexdigest()
 
     api_key = APIKey(
+        user_id=user_id,
         name=key_in.name,
         key_prefix=key_prefix,
         key_hash=key_hash,
@@ -40,9 +55,17 @@ def create_api_key(key_in: APIKeyCreate, db: Session = Depends(get_db)):
     return response_data
 
 
+
 @router.delete("/{key_id}", status_code=status.HTTP_204_NO_CONTENT)
-def revoke_api_key(key_id: str, db: Session = Depends(get_db)):
-    api_key = db.query(APIKey).filter(APIKey.id == key_id).first()
+def revoke_api_key(
+    key_id: str,
+    user_id: Optional[str] = Depends(get_optional_user),
+    db: Session = Depends(get_db),
+):
+    query = db.query(APIKey).filter(APIKey.id == key_id)
+    if user_id:
+        query = query.filter(APIKey.user_id == user_id)
+    api_key = query.first()
     if not api_key:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -51,3 +74,4 @@ def revoke_api_key(key_id: str, db: Session = Depends(get_db)):
     api_key.status = "revoked"
     db.commit()
     return None
+

@@ -7,6 +7,16 @@ from app.database import get_db
 from app.models import APIKey
 
 
+def get_optional_user(
+    x_user_id: Optional[str] = Header(None, alias="X-User-Id"),
+    db: Session = Depends(get_db),
+) -> Optional[str]:
+    """Extract authenticated Clerk user id if present."""
+    if not x_user_id:
+        return None
+    return x_user_id.strip()
+
+
 def verify_api_key(
     x_api_key: Optional[str] = Header(None, alias="X-API-Key"),
     authorization: Optional[str] = Header(None),
@@ -40,3 +50,5 @@ def verify_api_key(
     db.commit()
 
     return api_key_obj
+
+
