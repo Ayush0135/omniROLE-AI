@@ -7,14 +7,14 @@ import RealtimeWebSocketProvider from '@/components/RealtimeWebSocketProvider';
 import { Footer } from '@/components/Footer';
 
 export const metadata = {
-  title: 'OmniRole AI — Specialized AI Roles for Real-World Work',
-  description: 'Deploy domain-expert AI roles with live web search grounding, vector knowledge memory, and multimodal vision.',
+  title: 'OmniRole AI — Autonomous AI Persona Studio',
+  description: 'Design, configure, and orchestrate autonomous AI personas with live web search grounding, pgvector memory, and sub-110ms execution.',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
-      <body className="bg-[#fafafa] text-slate-900 flex flex-col min-h-screen selection:bg-blue-500/20 selection:text-blue-900 antialiased font-sans">
+    <html lang="en" className="dark">
+      <body className="bg-[#04050d] text-slate-100 flex flex-col min-h-screen selection:bg-indigo-500/30 selection:text-indigo-200 antialiased font-sans">
         <AuthProvider>
           <RealtimeWebSocketProvider>
             <div className="flex flex-col min-h-screen">

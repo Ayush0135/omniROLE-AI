@@ -50,29 +50,29 @@ function LoginForm() {
     <div className="min-h-[75vh] flex items-center justify-center py-10 px-4">
       <div className="w-full max-w-md">
         {/* Card */}
-        <div className="bg-white border border-slate-200 rounded-3xl p-8 sm:p-10 shadow-sm">
+        <div className="cyber-card p-8 sm:p-10 border-indigo-500/30">
           {/* Header */}
           <div className="text-center mb-8">
-            <div className="w-12 h-12 rounded-2xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 mx-auto mb-4 font-bold text-xl">
+            <div className="w-12 h-12 rounded-2xl w-12 h-12 rounded-2xl bg-gradient-to-tr from-indigo-500/20 via-purple-500/20 to-cyan-500/20 border border-indigo-500/40 flex items-center justify-center text-cyan-400 mx-auto mb-4 font-bold text-xl">
               ✦
             </div>
-            <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
+            <h1 className="text-2xl font-bold text-white tracking-tight">
               Welcome back
             </h1>
-            <p className="text-sm text-slate-500 mt-1.5">
+            <p className="text-sm text-slate-400 mt-1.5">
               Sign in to your OmniRole workspace
             </p>
           </div>
 
           {/* Mode Switcher */}
-          <div className="flex p-1 bg-slate-100 rounded-xl mb-6 text-xs font-semibold">
+          <div className="flex p-1 bg-black/40 border border-white/[0.08] rounded-xl mb-6 text-xs font-semibold">
             <button
               type="button"
               onClick={() => { setUseOtpMode(false); setError(null); }}
               className={`flex-1 py-2 rounded-lg transition-all ${
                 !useOtpMode
-                  ? 'bg-white text-slate-900 shadow-sm'
-                  : 'text-slate-500 hover:text-slate-900'
+                  ? 'bg-indigo-600 text-white shadow-md shadow-indigo-500/30'
+                  : 'text-slate-400 hover:text-white'
               }`}
             >
               Password
@@ -82,8 +82,8 @@ function LoginForm() {
               onClick={() => { setUseOtpMode(true); setError(null); }}
               className={`flex-1 py-2 rounded-lg transition-all ${
                 useOtpMode
-                  ? 'bg-white text-slate-900 shadow-sm'
-                  : 'text-slate-500 hover:text-slate-900'
+                  ? 'bg-indigo-600 text-white shadow-md shadow-indigo-500/30'
+                  : 'text-slate-400 hover:text-white'
               }`}
             >
               1-Click Email Code (OTP)
@@ -99,7 +99,7 @@ function LoginForm() {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+              <label className="block text-xs font-semibold text-slate-200 mb-1.5">
                 Email address
               </label>
               <div className="relative">
@@ -110,7 +110,7 @@ function LoginForm() {
                   placeholder="you@example.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:bg-white focus:border-blue-600 transition-colors"
+                  className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-white/[0.08] rounded-xl text-sm text-white placeholder-slate-400 focus:outline-none focus:bg-white focus:border-blue-600 transition-colors"
                 />
               </div>
             </div>
@@ -118,13 +118,13 @@ function LoginForm() {
             {!useOtpMode && (
               <div>
                 <div className="flex items-center justify-between mb-1.5">
-                  <label className="block text-xs font-semibold text-slate-700">
+                  <label className="block text-xs font-semibold text-slate-200">
                     Password
                   </label>
                   <button
                     type="button"
                     onClick={() => setUseOtpMode(true)}
-                    className="text-xs text-blue-600 hover:text-blue-700 font-medium"
+                    className="text-xs text-cyan-400 hover:text-cyan-300 font-medium"
                   >
                     Forgot password?
                   </button>
@@ -137,7 +137,7 @@ function LoginForm() {
                     placeholder="••••••••"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:bg-white focus:border-blue-600 transition-colors"
+                    className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-white/[0.08] rounded-xl text-sm text-white placeholder-slate-400 focus:outline-none focus:bg-white focus:border-blue-600 transition-colors"
                   />
                 </div>
               </div>
@@ -146,7 +146,7 @@ function LoginForm() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 px-4 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-semibold text-sm transition-all shadow-sm hover:shadow flex items-center justify-center gap-2 disabled:opacity-50"
+              className="w-full py-3 px-4 rounded-xl btn-cyber-primary text-white font-semibold text-sm transition-all shadow-sm hover:shadow flex items-center justify-center gap-2 disabled:opacity-50"
             >
               {loading ? (
                 <span>Signing in...</span>
@@ -160,11 +160,11 @@ function LoginForm() {
           </form>
 
           {/* Footer Link */}
-          <div className="mt-8 pt-6 border-t border-slate-100 text-center text-xs text-slate-500">
+          <div className="mt-8 pt-6 border-t border-slate-100 text-center text-xs text-slate-400">
             Don't have an account?{' '}
             <Link
               href={`/signup?redirect=${encodeURIComponent(redirectPath)}`}
-              className="text-blue-600 hover:text-blue-700 font-semibold"
+              className="text-cyan-400 hover:text-cyan-300 font-semibold"
             >
               Create an account
             </Link>
@@ -184,7 +184,7 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-[#fafafa] flex items-center justify-center text-slate-500">Loading...</div>}>
+    <Suspense fallback={<div className="min-h-screen bg-[#fafafa] flex items-center justify-center text-slate-400">Loading...</div>}>
       <LoginForm />
     </Suspense>
   );

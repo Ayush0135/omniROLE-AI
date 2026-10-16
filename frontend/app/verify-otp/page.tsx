@@ -72,18 +72,18 @@ function VerifyOtpForm() {
     <div className="min-h-[75vh] flex items-center justify-center py-10 px-4">
       <div className="w-full max-w-md">
         {/* Card */}
-        <div className="bg-white border border-slate-200 rounded-3xl p-8 sm:p-10 shadow-sm">
+        <div className="cyber-card p-8 sm:p-10 border-indigo-500/30">
           {/* Header */}
           <div className="text-center mb-8">
-            <div className="w-12 h-12 rounded-2xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 mx-auto mb-4">
+            <div className="w-12 h-12 rounded-2xl w-12 h-12 rounded-2xl bg-gradient-to-tr from-indigo-500/20 via-purple-500/20 to-cyan-500/20 border border-indigo-500/40 flex items-center justify-center text-cyan-400 mx-auto mb-4">
               <Mail className="w-6 h-6" />
             </div>
-            <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
+            <h1 className="text-2xl font-bold text-white tracking-tight">
               Check your email
             </h1>
-            <p className="text-sm text-slate-500 mt-2 leading-relaxed">
+            <p className="text-sm text-slate-400 mt-2 leading-relaxed">
               We sent a 6-digit verification code to <br />
-              <strong className="text-slate-900 font-semibold">{email || 'your email'}</strong>
+              <strong className="text-white font-semibold">{email || 'your email'}</strong>
             </p>
           </div>
 
@@ -103,7 +103,7 @@ function VerifyOtpForm() {
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-2 text-center">
+              <label className="block text-xs font-semibold text-slate-200 mb-2 text-center">
                 Enter 6-digit verification code
               </label>
               <input
@@ -114,14 +114,14 @@ function VerifyOtpForm() {
                 placeholder="123456"
                 value={otp}
                 onChange={(e) => setOtp(e.target.value)}
-                className="w-full py-3.5 text-center font-mono text-2xl font-bold tracking-[0.5em] bg-slate-50 border border-slate-200 rounded-2xl text-slate-900 placeholder-slate-300 focus:outline-none focus:bg-white focus:border-blue-600 transition-all"
+                className="w-full py-3.5 text-center font-mono text-2xl font-bold tracking-[0.5em] bg-slate-50 border border-white/[0.08] rounded-2xl text-white placeholder-slate-300 focus:outline-none focus:bg-white focus:border-blue-600 transition-all"
               />
             </div>
 
             <button
               type="submit"
               disabled={loading || otp.trim().length !== 6}
-              className="w-full py-3 px-4 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-semibold text-sm transition-all shadow-sm hover:shadow flex items-center justify-center gap-2 disabled:opacity-50"
+              className="w-full py-3 px-4 rounded-xl btn-cyber-primary text-white font-semibold text-sm transition-all shadow-sm hover:shadow flex items-center justify-center gap-2 disabled:opacity-50"
             >
               {loading ? (
                 <span>Verifying code...</span>
@@ -145,7 +145,7 @@ function VerifyOtpForm() {
                 type="button"
                 onClick={handleResend}
                 disabled={resending}
-                className="inline-flex items-center gap-1.5 text-xs text-blue-600 hover:text-blue-700 font-semibold"
+                className="inline-flex items-center gap-1.5 text-xs text-cyan-400 hover:text-cyan-300 font-semibold"
               >
                 <RefreshCw className={`w-3.5 h-3.5 ${resending ? 'animate-spin' : ''}`} />
                 <span>Didn't receive the email? Resend code</span>
@@ -154,11 +154,11 @@ function VerifyOtpForm() {
           </div>
 
           {/* Footer Back */}
-          <div className="mt-8 pt-6 border-t border-slate-100 text-center text-xs text-slate-500">
+          <div className="mt-8 pt-6 border-t border-slate-100 text-center text-xs text-slate-400">
             Wrong email address?{' '}
             <Link
               href="/login"
-              className="text-blue-600 hover:text-blue-700 font-semibold"
+              className="text-cyan-400 hover:text-cyan-300 font-semibold"
             >
               Use a different email
             </Link>
@@ -178,7 +178,7 @@ function VerifyOtpForm() {
 
 export default function VerifyOtpPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-[#fafafa] flex items-center justify-center text-slate-500">Loading...</div>}>
+    <Suspense fallback={<div className="min-h-screen bg-[#fafafa] flex items-center justify-center text-slate-400">Loading...</div>}>
       <VerifyOtpForm />
     </Suspense>
   );
