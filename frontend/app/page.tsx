@@ -3,12 +3,11 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import {
-  Sparkles,
   Bot,
   Terminal,
   Zap,
   ArrowRight,
-  Shield,
+  ShieldCheck,
   Layers,
   Cpu,
   Globe,
@@ -17,8 +16,9 @@ import {
   Wand2,
   ChevronRight,
   Code2,
-  Activity,
   CheckCircle2,
+  Sparkles,
+  ExternalLink,
 } from 'lucide-react';
 import { fetchRoles, enhanceSystemPrompt, Role } from '@/lib/api';
 import { RoleCard } from '@/components/RoleCard';
@@ -29,7 +29,7 @@ const PROVIDER_TAGS = [
   { name: 'Groq LPU (OSS 120B)', icon: '⚡', speed: '110ms', color: '#f59e0b' },
   { name: 'AWS Bedrock', icon: '☁️', speed: '310ms', color: '#3b82f6' },
   { name: 'pgvector RAG', icon: '📚', speed: '768-dim', color: '#a855f7' },
-  { name: 'Sandboxed Python', icon: '💻', speed: 'REPL', color: '#10b981' },
+  { name: 'Python Sandbox', icon: '💻', speed: 'REPL', color: '#10b981' },
 ];
 
 export default function LandingPage() {
@@ -73,60 +73,75 @@ export default function LandingPage() {
   };
 
   return (
-    <div className="space-y-24 sm:space-y-32 py-6 sm:py-12 max-w-7xl mx-auto">
+    <div className="space-y-16 sm:space-y-28 py-4 sm:py-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
       {/* ── 1. Hero Section ── */}
-      <section className="text-center space-y-8 pt-8 sm:pt-14 pb-4 relative">
-        {/* Ambient Glow Spheres */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[400px] bg-gradient-to-tr from-indigo-600/25 via-purple-600/20 to-cyan-500/15 rounded-full blur-3xl pointer-events-none -z-10" />
+      <section className="text-center space-y-6 sm:space-y-8 pt-6 sm:pt-14 pb-2 relative">
+        {/* Subtle top spotlight glow */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[320px] sm:w-[650px] h-[300px] bg-gradient-to-tr from-indigo-600/20 via-purple-600/15 to-cyan-500/10 rounded-full blur-3xl pointer-events-none -z-10" />
 
-        {/* Cyber Badge */}
-        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold font-mono tracking-wide cyber-pill shadow-xl">
-          <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
-          <span>CYBER-STUDIO 3.0 &middot; SUPABASE ISOLATION &middot; LIVE RAG</span>
+        {/* Human-Toned Pill Badge */}
+        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-medium precision-badge shadow-sm">
+          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+          <span className="text-slate-300">Grounded with live web search &amp; private document citations</span>
         </div>
 
-        {/* Main Title */}
-        <h1 className="text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-extrabold tracking-tight max-w-5xl mx-auto leading-[1.08] text-white">
-          Orchestrate Autonomous <br />
-          <span className="gradient-text-cyber">Specialist AI Personas</span>
+        {/* Main Title (Fluid & Phone Friendly) */}
+        <h1 className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold tracking-tight max-w-4xl mx-auto leading-[1.12] text-white">
+          AI roles built for real work, <br className="hidden sm:inline" />
+          <span className="gradient-text-accent">not just generic chat.</span>
         </h1>
 
-        {/* Subtitle */}
-        <p className="text-base sm:text-lg md:text-xl max-w-2xl mx-auto leading-relaxed text-slate-300 font-normal px-4">
-          Grounded with live Web Search, sandboxed Python code execution, and pgvector RAG.
-          Sub-110ms inference with isolated multi-user database privacy.
+        {/* Human Subtitle */}
+        <p className="text-sm sm:text-base md:text-lg max-w-2xl mx-auto leading-relaxed text-slate-300/90 font-normal">
+          Deploy specialized AI teammates that verify facts with real-time web search, run Python code, and remember your private docs. Fast, private to your account, and ready in seconds.
         </p>
 
-        {/* Call to Actions */}
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4 px-4">
+        {/* Call to Actions (Mobile Responsive Stacking) */}
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-3.5 pt-2 max-w-md sm:max-w-none mx-auto w-full">
           <Link
             href={user ? '/dashboard' : '/signup'}
-            className="w-full sm:w-auto px-9 py-4 rounded-2xl font-bold text-sm flex items-center justify-center gap-2.5 btn-cyber-primary shadow-2xl shadow-indigo-500/30"
+            className="w-full sm:w-auto px-8 py-3.5 rounded-xl font-semibold text-sm btn-precision-primary flex items-center justify-center gap-2"
           >
-            <span>{user ? 'Go to My Dashboard' : 'Get Started Free'}</span>
-            <ArrowRight className="w-4 h-4 stroke-[2.5]" />
+            <span>{user ? 'Go to My Dashboard' : 'Start Building Free'}</span>
+            <ArrowRight className="w-4 h-4" />
           </Link>
 
           <Link
             href="/roles"
-            className="w-full sm:w-auto px-9 py-4 rounded-2xl font-bold text-sm flex items-center justify-center gap-2.5 btn-cyber-secondary"
+            className="w-full sm:w-auto px-8 py-3.5 rounded-xl font-semibold text-sm btn-precision-secondary flex items-center justify-center gap-2"
           >
             <Bot className="w-4 h-4 text-cyan-400" />
-            <span>Explore Persona Catalog</span>
+            <span>Browse 10+ Prebuilt Roles</span>
           </Link>
         </div>
 
-        {/* Interactive Provider Ticker */}
-        <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4 pt-6">
+        {/* Trust Badges */}
+        <div className="pt-2 flex flex-wrap items-center justify-center gap-4 sm:gap-8 text-xs text-slate-400">
+          <div className="flex items-center gap-1.5">
+            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+            <span>500,000 monthly starter tokens</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+            <span>Verifiable source citations</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+            <span>Strict per-user data isolation</span>
+          </div>
+        </div>
+
+        {/* Supported Engines Ticker */}
+        <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 pt-4">
           {PROVIDER_TAGS.map((tag) => (
             <div
               key={tag.name}
-              className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-xs font-mono font-medium hover:border-indigo-500/40 transition-all shadow-sm"
+              className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/[0.03] border border-white/[0.07] text-xs font-medium hover:border-indigo-500/40 transition-all"
             >
               <span>{tag.icon}</span>
-              <span className="text-slate-200">{tag.name}</span>
-              <span className="text-[10px] px-1.5 py-0.5 rounded-md font-bold" style={{ color: tag.color, background: `${tag.color}20` }}>
+              <span className="text-slate-300 text-[11px] sm:text-xs">{tag.name}</span>
+              <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded" style={{ color: tag.color, background: `${tag.color}15` }}>
                 {tag.speed}
               </span>
             </div>
@@ -135,24 +150,24 @@ export default function LandingPage() {
       </section>
 
       {/* ── 2. Metric Telemetry Banner ── */}
-      <section className="grid grid-cols-2 lg:grid-cols-4 gap-4 px-2">
+      <section className="grid grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-5">
         {[
-          { label: 'Token Speed', value: '110 ms', desc: 'Groq LPU ultra-low latency', color: '#06b6d4' },
-          { label: 'Model Engines', value: '6+ Types', desc: 'Gemini, Groq, Bedrock & more', color: '#818cf8' },
-          { label: 'Grounding Tools', value: '5 Tools', desc: 'Web Search, Python, pgvector', color: '#c084fc' },
-          { label: 'Tenant Isolation', value: '100% Private', desc: 'Zero cross-tenant data leaks', color: '#10b981' },
+          { label: 'Latency', value: '110 ms', desc: 'Sub-second streaming execution', color: '#06b6d4' },
+          { label: 'LLM Engines', value: '6+ Providers', desc: 'Gemini, Groq, Bedrock & more', color: '#818cf8' },
+          { label: 'Live Grounding', value: 'Search + RAG', desc: 'Web search & 768-dim vector memory', color: '#c084fc' },
+          { label: 'Privacy', value: '100% Isolated', desc: 'Encrypted per-user data partitions', color: '#10b981' },
         ].map((stat) => (
           <div
             key={stat.label}
-            className="cyber-card p-6 space-y-1.5"
+            className="precision-card p-4 sm:p-6 space-y-1"
           >
-            <div className="text-xs font-mono font-bold uppercase tracking-wider text-slate-400">
+            <div className="text-[11px] font-mono font-semibold uppercase tracking-wider text-slate-400">
               {stat.label}
             </div>
-            <div className="text-3xl sm:text-4xl font-extrabold tracking-tight" style={{ color: stat.color }}>
+            <div className="text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight" style={{ color: stat.color }}>
               {stat.value}
             </div>
-            <div className="text-xs text-slate-400">
+            <div className="text-[11px] sm:text-xs text-slate-400 leading-snug">
               {stat.desc}
             </div>
           </div>
@@ -160,38 +175,38 @@ export default function LandingPage() {
       </section>
 
       {/* ── 3. Featured Roles Catalog Preview ── */}
-      <section className="space-y-8">
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 px-2">
+      <section className="space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
           <div>
-            <div className="flex items-center gap-2 text-xs font-bold font-mono uppercase tracking-wider text-cyan-400">
+            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-cyan-400">
               <Bot className="w-4 h-4" />
               <span>Production AI Catalog</span>
             </div>
-            <h2 className="text-3xl sm:text-4xl font-extrabold text-white mt-1.5">
-              Verified Specialist Personas
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-white mt-1">
+              Curated Specialist Roles
             </h2>
-            <p className="text-sm text-slate-400 mt-1">
-              Select any pre-configured specialist to launch an instant sandboxed conversation.
+            <p className="text-xs sm:text-sm text-slate-400 mt-0.5">
+              Select any role to start a grounded chat, or create your own custom persona.
             </p>
           </div>
 
           <Link
             href="/roles"
-            className="text-xs font-bold font-mono flex items-center gap-1.5 text-cyan-400 hover:text-cyan-300 transition-colors self-start sm:self-auto shrink-0"
+            className="text-xs font-semibold flex items-center gap-1.5 text-cyan-400 hover:text-cyan-300 transition-colors shrink-0"
           >
-            <span>VIEW ALL PERSONAS ({roles.length})</span>
+            <span>View All ({roles.length})</span>
             <ChevronRight className="w-4 h-4" />
           </Link>
         </div>
 
         {loadingRoles ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="h-64 rounded-2xl bg-white/[0.02] border border-white/[0.05] animate-pulse" />
+              <div key={i} className="h-60 rounded-2xl bg-white/[0.02] border border-white/[0.06] animate-pulse" />
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {roles.slice(0, 6).map((role) => (
               <RoleCard key={role.id} role={role} />
             ))}
@@ -200,39 +215,35 @@ export default function LandingPage() {
       </section>
 
       {/* ── 4. Interactive Persona Engine Terminal ── */}
-      <section className="cyber-card p-7 sm:p-10 space-y-6 relative overflow-hidden border-indigo-500/30">
-        <div className="absolute top-0 right-0 w-80 h-80 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
+      <section className="precision-card p-6 sm:p-8 space-y-5 relative overflow-hidden border-indigo-500/25">
+        <div className="absolute top-0 right-0 w-72 h-72 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
 
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative z-10">
-          <div className="space-y-1">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold font-mono cyber-pill">
-              <Wand2 className="w-3.5 h-3.5 text-cyan-400" />
-              <span>INTERACTIVE PROMPT ENHANCER</span>
-            </div>
-            <h3 className="text-2xl font-extrabold text-white font-heading">
-              Test the Persona Engineering Engine
-            </h3>
-            <p className="text-xs sm:text-sm text-slate-300">
-              Type any role concept below and watch OmniRole AI engineer a production system prompt in real time.
-            </p>
+        <div className="space-y-1 relative z-10">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold precision-badge">
+            <Wand2 className="w-3.5 h-3.5 text-cyan-400" />
+            <span>Interactive Prompt Enhancer</span>
           </div>
+          <h3 className="text-xl sm:text-2xl font-bold text-white">
+            Have a role in mind? Watch our engine polish it.
+          </h3>
+          <p className="text-xs sm:text-sm text-slate-300 max-w-2xl">
+            Type any simple concept below (e.g. "Python API Architect" or "SEO Content Strategist") and see how OmniRole crafts a structured system prompt with clear boundaries.
+          </p>
         </div>
 
-        <form onSubmit={handleQuickEnhance} className="relative z-10 space-y-4">
-          <div className="flex flex-col sm:flex-row gap-3">
-            <div className="relative flex-1">
-              <input
-                type="text"
-                placeholder="e.g. Senior Smart Contract Auditor or Quantitative Research Analyst"
-                value={promptInput}
-                onChange={(e) => setPromptInput(e.target.value)}
-                className="w-full px-5 py-4 rounded-xl text-sm bg-black/40 border border-indigo-500/30 text-white placeholder:text-slate-500 focus:border-cyan-400 transition-all font-mono"
-              />
-            </div>
+        <form onSubmit={handleQuickEnhance} className="relative z-10 space-y-3">
+          <div className="flex flex-col sm:flex-row gap-2.5">
+            <input
+              type="text"
+              placeholder="e.g. Senior Smart Contract Auditor or Quantitative Research Analyst"
+              value={promptInput}
+              onChange={(e) => setPromptInput(e.target.value)}
+              className="flex-1 px-4 py-3 rounded-xl text-sm bg-black/40 border border-white/10 text-white placeholder:text-slate-500 focus:border-indigo-400 transition-all font-sans min-h-[44px]"
+            />
             <button
               type="submit"
               disabled={isEnhancing || !promptInput.trim()}
-              className="px-8 py-4 rounded-xl font-bold text-sm btn-cyber-primary flex items-center justify-center gap-2 transition-all disabled:opacity-40"
+              className="px-6 py-3 rounded-xl font-semibold text-xs sm:text-sm btn-precision-primary flex items-center justify-center gap-2 transition-all disabled:opacity-40 min-h-[44px] shrink-0"
             >
               <Sparkles className={`w-4 h-4 ${isEnhancing ? 'animate-spin' : ''}`} />
               <span>{isEnhancing ? 'Engineering...' : 'Enhance Prompt'}</span>
@@ -240,10 +251,10 @@ export default function LandingPage() {
           </div>
 
           {enhancedOutput && (
-            <div className="p-6 rounded-2xl bg-black/60 border border-emerald-500/30 space-y-3 font-mono text-xs leading-relaxed text-emerald-300">
-              <div className="flex items-center justify-between text-[11px] font-bold text-cyan-400 pb-2 border-b border-white/[0.08]">
-                <span>AI SYSTEM PROMPT SPECIFICATION:</span>
-                <span className="text-slate-500">Auto-Generated via OmniRole Engine</span>
+            <div className="p-4 sm:p-5 rounded-xl bg-black/60 border border-emerald-500/30 space-y-2 text-xs leading-relaxed text-emerald-300 font-mono">
+              <div className="flex items-center justify-between text-[11px] font-bold text-cyan-400 pb-1.5 border-b border-white/[0.08]">
+                <span>GENERATED SYSTEM PROMPT:</span>
+                <span className="text-slate-400">Ready to copy</span>
               </div>
               <p className="whitespace-pre-wrap">{enhancedOutput}</p>
             </div>
@@ -251,25 +262,25 @@ export default function LandingPage() {
         </form>
       </section>
 
-      {/* ── 5. Core Architecture Pillars ── */}
-      <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      {/* ── 5. Core Pillars ── */}
+      <section className="grid grid-cols-1 md:grid-cols-3 gap-5">
         {[
           {
-            icon: Lock,
-            title: 'Central Multi-Tenant Isolation',
-            desc: 'Every custom persona, conversation history, and API key is partitioned strictly per account with encrypted token storage.',
+            icon: Globe,
+            title: 'Live Web Grounding',
+            desc: 'Every answer is verified against real-time web results and cited clearly with sources. Zero made-up facts or outdated numbers.',
             color: '#06b6d4',
           },
           {
-            icon: Zap,
-            title: 'Multi-Connector Grounding',
-            desc: 'Zero hallucination. Personas execute live Google Search, sandboxed Python code snippets, and Supabase pgvector retrieval dynamically.',
+            icon: Lock,
+            title: 'Private to Your Account',
+            desc: 'Your custom AI roles, chat history, and search logs are partitioned strictly to your user ID. What happens in your workspace stays in your workspace.',
             color: '#a855f7',
           },
           {
             icon: Terminal,
-            title: 'High-Throughput REST API',
-            desc: 'Deploy personas directly into external webhooks, bots, and backends using SHA-256 secured bearer tokens with SSE streaming.',
+            title: 'High-Throughput API Access',
+            desc: 'Connect your roles to external scripts, bots, or apps via clean REST endpoints and secure API keys with server-sent event streaming.',
             color: '#10b981',
           },
         ].map((pillar) => {
@@ -277,18 +288,18 @@ export default function LandingPage() {
           return (
             <div
               key={pillar.title}
-              className="cyber-card p-8 space-y-4"
+              className="precision-card p-6 sm:p-7 space-y-3"
             >
               <div
-                className="w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg"
-                style={{ background: `${pillar.color}20`, border: `1px solid ${pillar.color}40`, color: pillar.color }}
+                className="w-10 h-10 rounded-xl flex items-center justify-center shadow-md"
+                style={{ background: `${pillar.color}15`, border: `1px solid ${pillar.color}35`, color: pillar.color }}
               >
-                <Icon className="w-6 h-6" />
+                <Icon className="w-5 h-5" />
               </div>
-              <h4 className="text-lg font-bold text-white font-heading">
+              <h4 className="text-base font-bold text-white">
                 {pillar.title}
               </h4>
-              <p className="text-xs text-slate-300/80 leading-relaxed">
+              <p className="text-xs sm:text-sm text-slate-400 leading-relaxed">
                 {pillar.desc}
               </p>
             </div>
@@ -297,35 +308,35 @@ export default function LandingPage() {
       </section>
 
       {/* ── 6. Final Call to Action ── */}
-      <section className="text-center py-16 sm:py-24 rounded-3xl cyber-card space-y-6 px-6 relative overflow-hidden border-indigo-500/40">
-        <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/15 via-purple-500/15 to-cyan-500/15 pointer-events-none" />
+      <section className="text-center py-12 sm:py-20 rounded-2xl precision-card space-y-5 px-6 relative overflow-hidden border-indigo-500/30">
+        <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/10 via-purple-500/10 to-cyan-500/10 pointer-events-none" />
 
-        <div className="relative z-10 space-y-5 max-w-2xl mx-auto">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold cyber-pill">
+        <div className="relative z-10 space-y-4 max-w-xl mx-auto">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold precision-badge">
             <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
-            <span>START FREE &middot; 500,000 STARTER TOKENS</span>
+            <span>Ready in under 30 seconds &middot; No credit card required</span>
           </div>
 
-          <h3 className="text-3xl sm:text-5xl font-extrabold text-white font-heading">
-            Build Your Autonomous AI Workforce
+          <h3 className="text-2xl sm:text-4xl font-extrabold text-white">
+            Build your first specialized AI role today.
           </h3>
-          <p className="text-sm sm:text-base text-slate-300">
-            Start with our verified specialist roles or architect your first bespoke AI persona right now.
+          <p className="text-xs sm:text-sm text-slate-300">
+            Start free with 500,000 monthly tokens. Explore prebuilt experts or design your own custom persona.
           </p>
 
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
             <Link
-              href="/roles/new"
-              className="px-9 py-4 rounded-2xl font-bold text-sm btn-cyber-primary flex items-center justify-center gap-2"
+              href={user ? '/roles/new' : '/signup'}
+              className="w-full sm:w-auto px-7 py-3 rounded-xl font-semibold text-xs sm:text-sm btn-precision-primary flex items-center justify-center gap-2"
             >
               <Bot className="w-4 h-4" />
-              <span>Create Your First Persona</span>
+              <span>Create Your First Role</span>
             </Link>
             <Link
               href="/pricing"
-              className="px-9 py-4 rounded-2xl font-bold text-sm btn-cyber-secondary flex items-center justify-center gap-2"
+              className="w-full sm:w-auto px-7 py-3 rounded-xl font-semibold text-xs sm:text-sm btn-precision-secondary flex items-center justify-center gap-2"
             >
-              <span>View Plans & Upgrades</span>
+              <span>View Plans</span>
               <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
