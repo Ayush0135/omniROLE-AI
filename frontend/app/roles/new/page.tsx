@@ -42,8 +42,8 @@ export default function CreateRolePage() {
   const [tagInput, setTagInput] = useState('');
   const [expertise, setExpertise] = useState<string[]>(['AI Architecture', 'Problem Solving']);
   const [enabledConnectors, setEnabledConnectors] = useState<string[]>(['web_search', 'code_executor', 'vector_rag']);
-  const [provider, setProvider] = useState('groq');
-  const [modelName, setModelName] = useState('openai/gpt-oss-120b');
+  const [provider, setProvider] = useState('bedrock');
+  const [modelName, setModelName] = useState('meta.llama3-8b-instruct-v1:0');
   const [temperature, setTemperature] = useState(0.4);
   const [maxTokens, setMaxTokens] = useState(2048);
   const [responseStyle, setResponseStyle] = useState('Analytical & Precise');

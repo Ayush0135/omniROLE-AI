@@ -11,10 +11,10 @@ class Settings(BaseSettings):
     DATABASE_URL: str = "sqlite:///./omnirole.db"
 
     # Active LLM Provider 1: Google Gemini AI Studio
-    LLM_PROVIDER: str = "openai_compatible"
+    LLM_PROVIDER: str = "bedrock"
     LLM_BASE_URL: str = "https://generativelanguage.googleapis.com/v1beta/openai/"
     LLM_API_KEY: str = ""
-    LLM_MODEL: str = "gemini-2.5-flash"
+    LLM_MODEL: str = "meta.llama3-8b-instruct-v1:0"
     LLM_TIMEOUT_SECONDS: float = 60.0
 
     # Active LLM Provider 2: Groq LPUs (Ultra-Fast)

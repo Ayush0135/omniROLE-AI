@@ -412,20 +412,14 @@ class BedrockProvider(LLMProvider):
 
 
 def get_llm_provider(provider_type: Optional[str] = None) -> LLMProvider:
-    if provider_type == "bedrock":
+    # AWS Bedrock is the primary default LLM engine across the studio
+    if provider_type == "bedrock" or not provider_type:
         return BedrockProvider()
     if provider_type == "groq":
         return GroqProvider()
     if provider_type == "openrouter":
         return OpenRouterProvider()
-    if provider_type == "gemini" or provider_type == "openai_compatible":
+    if provider_type in ("gemini", "openai_compatible"):
         return OpenAICompatibleProvider()
         
-    if settings.LLM_PROVIDER == "bedrock":
-        return BedrockProvider()
-    if settings.LLM_PROVIDER == "groq":
-        return GroqProvider()
-    if settings.LLM_PROVIDER == "openrouter":
-        return OpenRouterProvider()
-        
-    return OpenAICompatibleProvider()
+    return BedrockProvider()

@@ -47,7 +47,7 @@ async def chat_with_role(
         today_start = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
         daily_tokens = db.query(func.sum(UsageRecord.tokens_total)).filter(
             UsageRecord.created_at >= today_start,
-            UsageRecord.user_id == user_id if user_id else True,
+            UsageRecord.user_id == user_id if user_id else UsageRecord.user_id.is_(None),
         ).scalar() or 0
         if daily_tokens >= 20000:
             raise HTTPException(
