@@ -2,6 +2,7 @@ import abc
 import time
 import httpx
 import random
+import base64
 from typing import Dict, List, Any, Optional
 from app.config import settings
 
@@ -78,6 +79,18 @@ class OpenAICompatibleProvider(LLMProvider):
                 msg_image = image_url
 
             if msg_image:
+                # If image is an http(s) URL, download and encode as base64 data URI
+                if msg_image.startswith("http://") or msg_image.startswith("https://"):
+                    try:
+                        async with httpx.AsyncClient(timeout=10.0) as img_client:
+                            img_resp = await img_client.get(msg_image)
+                            if img_resp.status_code == 200:
+                                ctype = img_resp.headers.get("content-type", "image/jpeg").split(";")[0]
+                                b64_bytes = base64.b64encode(img_resp.content).decode("utf-8")
+                                msg_image = f"data:{ctype};base64,{b64_bytes}"
+                    except Exception:
+                        pass
+
                 formatted_messages.append({
                     "role": role,
                     "content": [
@@ -111,7 +124,26 @@ class OpenAICompatibleProvider(LLMProvider):
         async with httpx.AsyncClient(timeout=settings.LLM_TIMEOUT_SECONDS) as client:
             res = await client.post(url, json=payload, headers=headers)
             if res.status_code != 200:
-                raise Exception(f"Gemini API Error ({res.status_code}): {res.text}")
+                # If Gemini hits 429 (quota exceeded) or other errors, fallback to Groq LPU then OpenRouter
+                if settings.GROQ_API_KEY:
+                    try:
+                        fallback_res = await GroqProvider().generate_response(
+                            system_prompt, messages, settings.GROQ_MODEL, temperature, max_tokens, image_url=image_url
+                        )
+                        fallback_res["provider"] = "groq_gemini_fallback"
+                        return fallback_res
+                    except Exception:
+                        pass
+                if settings.OPENROUTER_API_KEY:
+                    try:
+                        fallback_res = await OpenRouterProvider().generate_response(
+                            system_prompt, messages, settings.OPENROUTER_MODEL, temperature, max_tokens, image_url=image_url
+                        )
+                        fallback_res["provider"] = "openrouter_gemini_fallback"
+                        return fallback_res
+                    except Exception:
+                        pass
+                raise Exception(f"LLM API Error ({res.status_code}): {res.text}")
             
             data = res.json()
             latency_ms = round((time.time() - start_time) * 1000, 2)
@@ -255,8 +287,17 @@ class GroqProvider(LLMProvider):
         async with httpx.AsyncClient(timeout=settings.LLM_TIMEOUT_SECONDS) as client:
             res = await client.post(url, json=payload, headers=headers)
             
-            # If Groq returns 400 tool_use_failed, fallback to Gemini API cleanly
+            # If Groq returns non-200, fallback to OpenRouter then Gemini cleanly
             if res.status_code != 200:
+                if settings.OPENROUTER_API_KEY:
+                    try:
+                        fallback_res = await OpenRouterProvider().generate_response(
+                            system_prompt, messages, settings.OPENROUTER_MODEL, temperature, max_tokens, image_url=image_url
+                        )
+                        fallback_res["provider"] = "groq_openrouter_fallback"
+                        return fallback_res
+                    except Exception:
+                        pass
                 fallback_res = await OpenAICompatibleProvider().generate_response(
                     system_prompt, messages, "gemini-2.5-flash", temperature, max_tokens
                 )
