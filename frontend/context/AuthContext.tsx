@@ -37,12 +37,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
-  // Helper to sync token in cookie for middleware
+  // Helper to sync token in cookie for middleware with secure flag on HTTPS
   const setAuthCookie = (tokenValue: string | null) => {
+    if (typeof document === 'undefined') return;
+    const isHttps = typeof window !== 'undefined' && window.location.protocol === 'https:';
+    const secureFlag = isHttps ? '; Secure' : '';
     if (tokenValue) {
-      document.cookie = `omni_token=${tokenValue}; path=/; max-age=${60 * 60 * 24 * 7}; SameSite=Lax`;
+      document.cookie = `omni_token=${tokenValue}; path=/; max-age=${60 * 60 * 24 * 7}; SameSite=Lax${secureFlag}`;
     } else {
-      document.cookie = `omni_token=; path=/; max-age=0; SameSite=Lax`;
+      document.cookie = `omni_token=; path=/; max-age=0; SameSite=Lax${secureFlag}`;
     }
   };
 
@@ -157,6 +160,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const logout = () => {
+    try {
+      fetch('/api/v1/auth/logout', { method: 'POST' }).catch(() => {});
+    } catch (_) {}
     localStorage.removeItem('omni_token');
     localStorage.removeItem('omni_current_user_id');
     setAuthCookie(null);

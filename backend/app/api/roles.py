@@ -1,59 +1,38 @@
-import re
-import asyncio
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
+from sqlalchemy import or_
 from app.database import get_db
-from app.models import Role
+from app.models import Role, RoleRLProfile
 from app.schemas import RoleCreate, RoleUpdate, RoleResponse, KnowledgeDocumentCreate
-from app.api.deps import get_optional_user
+from app.engine.prompt_builder import PromptBuilder
 from app.engine.supabase_sync import SupabaseSyncEngine
-
+from app.api.deps import get_optional_user
 from pydantic import BaseModel
+import re
+
+class PromptEnhanceRequest(BaseModel):
+    prompt: str
+    role_type: Optional[str] = "general"
+
+class PromptEnhanceResponse(BaseModel):
+    enhanced_prompt: str
 
 router = APIRouter(prefix="/roles", tags=["Roles"])
 
 
-class PromptEnhanceRequest(BaseModel):
-    role_name: str
-    short_prompt: str
-
-
-@router.post("/enhance-prompt")
-async def enhance_system_prompt(payload: PromptEnhanceRequest):
-    from app.engine.llm_provider import OpenAICompatibleProvider
-    provider = OpenAICompatibleProvider()
-    
-    meta_prompt = f"""You are a Master AI Prompt Engineer. Transform the short role prompt below into a comprehensive, high-precision, production-grade AI System Prompt for an expert AI named '{payload.role_name}'.
-
-Short Prompt: "{payload.short_prompt}"
-
-Write ONLY the enhanced system prompt text. Include clear role boundaries, operational rules, reasoning methodology, and response format guidelines."""
-
-    try:
-        result = await provider.generate_response(
-            system_prompt="You are an expert AI Prompt Optimizer. Output ONLY the enhanced system prompt with zero conversational filler.",
-            messages=[{"role": "user", "content": meta_prompt}],
-            model_name="gemini-2.5-flash",
-            temperature=0.4,
-            max_tokens=1024,
-        )
-        return {"enhanced_prompt": result["response"].strip()}
-    except Exception as e:
-        # Fallback enhanced template if API fails
-        return {
-            "enhanced_prompt": f"You are {payload.role_name}, a world-class domain expert. {payload.short_prompt}\n\n### Operational Directives:\n1. Maintain absolute accuracy, logical precision, and empirical rigor.\n2. Structure all output using clean Markdown, step-by-step reasoning, and actionable insights.\n3. Utilize active connectors to verify data before answering."
-        }
-
-
 def slugify(text: str) -> str:
-    text = text.lower().strip()
-    text = re.sub(r"[^\w\s-]", "", text)
-    return re.sub(r"[\s_-]+", "-", text)
+    text = text.lower()
+    return re.sub(r"[\s_]+", "-", re.sub(r"[^\w\s-]", "", text)).strip("-")
 
 
-from sqlalchemy import or_
-from app.api.deps import get_optional_user
+@router.post("/enhance-prompt", response_model=PromptEnhanceResponse)
+async def enhance_prompt_endpoint(payload: PromptEnhanceRequest):
+    """
+    Direct endpoint to elevate system prompts using advanced meta-prompting strategies.
+    """
+    enhanced = await PromptBuilder.enhance_system_prompt(payload.prompt, payload.role_type)
+    return PromptEnhanceResponse(enhanced_prompt=enhanced)
 
 
 @router.get("", response_model=List[RoleResponse])
@@ -93,12 +72,17 @@ async def create_role(
 ):
     from app.models import User
     
-    # Check current user's plan if authenticated
-    user = db.query(User).filter(User.id == user_id).first() if user_id else None
+    if not user_id:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Authentication required to create custom AI Personas. Please sign in."
+        )
+
+    user = db.query(User).filter(User.id == user_id).first()
     is_pro = user and user.plan in ["Pro Developer", "Enterprise"]
     
     # Calculate how many custom roles this specific user has created
-    user_role_count = db.query(Role).filter(Role.user_id == user_id).count() if user_id else db.query(Role).filter(Role.user_id.is_(None)).count()
+    user_role_count = db.query(Role).filter(Role.user_id == user_id).count()
     if not is_pro and user_role_count >= 2:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -139,6 +123,10 @@ async def create_role(
     db.commit()
     db.refresh(role)
 
+    # Initialize RL Profile
+    rl_profile = RoleRLProfile(role_id=role.id)
+    db.add(rl_profile)
+    db.commit()
 
     # Direct Real-Time Sync to Supabase PostgreSQL
     await SupabaseSyncEngine.sync_role({
@@ -163,7 +151,11 @@ async def create_role(
 
 
 @router.get("/{id_or_slug}", response_model=RoleResponse)
-def get_role(id_or_slug: str, db: Session = Depends(get_db)):
+def get_role(
+    id_or_slug: str,
+    user_id: Optional[str] = Depends(get_optional_user),
+    db: Session = Depends(get_db),
+):
     role = (
         db.query(Role)
         .filter((Role.id == id_or_slug) | (Role.slug == id_or_slug))
@@ -173,6 +165,12 @@ def get_role(id_or_slug: str, db: Session = Depends(get_db)):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"AI Role '{id_or_slug}' not found.",
+        )
+    # Strict isolation: If role is custom and belongs to another user, deny access
+    if role.user_id is not None and role.user_id != user_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access denied. This is a private custom AI Persona."
         )
     return role
 
@@ -201,10 +199,10 @@ async def update_role(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="System template roles cannot be modified. Duplicate it to create your own editable copy."
         )
-    if user_id and role.user_id != user_id:
+    if not user_id or role.user_id != user_id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="You do not have permission to modify this AI Role."
+            detail="Permission denied. You can only modify custom AI personas you created."
         )
 
     update_data = role_in.model_dump(exclude_unset=True)
@@ -266,10 +264,10 @@ async def delete_role(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="System template roles cannot be deleted."
         )
-    if user_id and role.user_id != user_id:
+    if not user_id or role.user_id != user_id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="You do not have permission to delete this AI Role."
+            detail="Permission denied. You can only delete custom AI personas you created."
         )
 
     # Safely delete associated usage records, connector logs, and conversations
@@ -307,6 +305,13 @@ async def add_rag_document(
             detail=f"AI Role '{id_or_slug}' not found.",
         )
 
+    # Strict isolation: Only owner can upload RAG documents to custom roles
+    if role.user_id is not None and role.user_id != user_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Permission denied. You can only add knowledge documents to your own AI personas."
+        )
+
     paragraphs = [p.strip() for p in doc_in.content.split("\n\n") if len(p.strip()) > 10]
     if not paragraphs:
         paragraphs = [doc_in.content.strip()]
@@ -341,6 +346,7 @@ async def add_rag_document(
 @router.get("/{id_or_slug}/rag/documents")
 def list_rag_documents(
     id_or_slug: str,
+    user_id: Optional[str] = Depends(get_optional_user),
     db: Session = Depends(get_db),
 ):
     role = (
@@ -352,6 +358,13 @@ def list_rag_documents(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"AI Role '{id_or_slug}' not found.",
+        )
+
+    # Strict isolation
+    if role.user_id is not None and role.user_id != user_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access denied. You do not have permission to view knowledge documents for this private AI persona."
         )
 
     from app.models import QueryEmbedding
@@ -371,5 +384,3 @@ def list_rag_documents(
         }
         for e in embeddings
     ]
-
-

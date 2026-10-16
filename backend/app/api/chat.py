@@ -4,12 +4,12 @@ from typing import Optional, List, Dict, Any
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from app.database import get_db
-from app.models import Role, Conversation, Message, UsageRecord, SearchHistory
+from app.models import Role, Conversation, Message, UsageRecord, SearchHistory, User
 from app.schemas import ChatRequest, ChatResponse
 from app.engine.orchestrator import SearchOrchestrator
 from app.engine.supabase_sync import SupabaseSyncEngine
-
 from app.api.deps import get_optional_user
+from sqlalchemy import func
 
 router = APIRouter(tags=["Chat Execution"])
 
@@ -32,17 +32,23 @@ async def chat_with_role(
             detail=f"AI Role '{id_or_slug}' not found.",
         )
 
+    # Enforce multi-tenant access control on private custom roles
+    if role.user_id is not None and role.user_id != user_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access denied. You do not have permission to use this private AI Persona."
+        )
+
     # Enforce Token Limits
-    from app.models import User, UsageRecord
-    from sqlalchemy import func
-    
-    # Check if a Pro/Enterprise user exists
     user = db.query(User).filter(User.id == user_id).first() if user_id else None
     
     if not user or user.plan not in ["Pro Developer", "Enterprise"]:
         # Free Tier: Enforce 20,000 daily token limit
         today_start = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
-        daily_tokens = db.query(func.sum(UsageRecord.tokens_total)).filter(UsageRecord.created_at >= today_start).scalar() or 0
+        daily_tokens = db.query(func.sum(UsageRecord.tokens_total)).filter(
+            UsageRecord.created_at >= today_start,
+            UsageRecord.user_id == user_id if user_id else True,
+        ).scalar() or 0
         if daily_tokens >= 20000:
             raise HTTPException(
                 status_code=status.HTTP_429_TOO_MANY_REQUESTS,
@@ -58,10 +64,13 @@ async def chat_with_role(
                 detail=f"Premium monthly limit of {limit:,} tokens reached. Your service has been paused. Please upgrade your plan or wait for the next billing cycle."
             )
 
-    # 1. Manage Conversation
+    # 1. Manage Conversation with strict user isolation
     conversation = None
     if chat_in.conversation_id:
-        conv_query = db.query(Conversation).filter(Conversation.id == chat_in.conversation_id, Conversation.role_id == role.id)
+        conv_query = db.query(Conversation).filter(
+            Conversation.id == chat_in.conversation_id,
+            Conversation.role_id == role.id
+        )
         if user_id:
             conv_query = conv_query.filter(Conversation.user_id == user_id)
         conversation = conv_query.first()
@@ -75,7 +84,6 @@ async def chat_with_role(
         db.add(conversation)
         db.commit()
         db.refresh(conversation)
-
 
     # 2. Save User Message
     user_msg = Message(
@@ -132,8 +140,9 @@ async def chat_with_role(
     )
     db.add(assistant_msg)
 
-    # 6. Record Usage Telemetry
+    # 6. Record Usage Telemetry — strictly tagged to user_id
     usage = UsageRecord(
+        user_id=user_id,
         role_id=role.id,
         tokens_prompt=llm_result["tokens_prompt"],
         tokens_completion=llm_result["tokens_completion"],
@@ -142,8 +151,22 @@ async def chat_with_role(
         endpoint=f"/api/v1/roles/{role.id}/chat",
     )
     db.add(usage)
+
+    # 7. Record in SearchHistory if web search or rag was performed
+    if user_id:
+        connector_outs = llm_result.get("connector_outputs", [])
+        for c in connector_outs:
+            if c.get("connector") in ["web_search", "vector_rag"]:
+                sh = SearchHistory(
+                    user_id=user_id,
+                    conversation_id=conversation.id,
+                    query_text=chat_in.message,
+                    search_type=c.get("connector"),
+                    sources_cited=c.get("sources", []),
+                )
+                db.add(sh)
     
-    # Increment tokens for premium user
+    # Increment tokens for user
     if user:
         user.tokens_used_this_month = (user.tokens_used_this_month or 0) + llm_result["tokens_total"]
         

@@ -11,6 +11,7 @@ from app.api.deps import get_current_user
 router = APIRouter(prefix="/dashboard", tags=["User Dashboard"])
 
 
+@router.get("/stats")
 @router.get("/user-stats")
 def get_user_dashboard_stats(
     current_user: User = Depends(get_current_user),

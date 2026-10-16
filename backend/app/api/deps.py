@@ -1,7 +1,7 @@
 import hashlib
 from datetime import datetime
 from typing import Optional
-from fastapi import Header, HTTPException, Depends, status
+from fastapi import Header, HTTPException, Depends, status, Request
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models import APIKey, User
@@ -9,17 +9,20 @@ from app.api.auth import verify_user_token
 
 
 def get_optional_user(
+    request: Request,
     authorization: Optional[str] = Header(None),
     x_user_id: Optional[str] = Header(None, alias="X-User-Id"),
     x_auth_token: Optional[str] = Header(None, alias="X-Auth-Token"),
     db: Session = Depends(get_db),
 ) -> Optional[str]:
-    """Extract authenticated user id if present."""
+    """Extract authenticated user id from Authorization header, X-Auth-Token, X-User-Id, or omni_token cookie."""
     token = None
     if authorization and authorization.startswith("Bearer "):
         token = authorization[7:].strip()
     elif x_auth_token:
         token = x_auth_token.strip()
+    elif request.cookies.get("omni_token"):
+        token = request.cookies.get("omni_token").strip()
 
     if token:
         payload = verify_user_token(token)
@@ -33,6 +36,7 @@ def get_optional_user(
 
 
 def get_current_user(
+    request: Request,
     authorization: Optional[str] = Header(None),
     x_auth_token: Optional[str] = Header(None, alias="X-Auth-Token"),
     db: Session = Depends(get_db),
@@ -43,6 +47,8 @@ def get_current_user(
         token = authorization[7:].strip()
     elif x_auth_token:
         token = x_auth_token.strip()
+    elif request.cookies.get("omni_token"):
+        token = request.cookies.get("omni_token").strip()
 
     if not token:
         raise HTTPException(

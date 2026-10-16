@@ -50,26 +50,28 @@ function LoginForm() {
     <div className="min-h-[75vh] flex items-center justify-center py-10 px-4">
       <div className="w-full max-w-md">
         {/* Card */}
-        <div className="cyber-card p-8 sm:p-10 border-indigo-500/30">
+        <div className="precision-card p-7 sm:p-9 border-indigo-500/30 relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
+
           {/* Header */}
-          <div className="text-center mb-8">
-            <div className="w-12 h-12 rounded-2xl w-12 h-12 rounded-2xl bg-gradient-to-tr from-indigo-500/20 via-purple-500/20 to-cyan-500/20 border border-indigo-500/40 flex items-center justify-center text-cyan-400 mx-auto mb-4 font-bold text-xl">
+          <div className="text-center mb-8 relative z-10">
+            <div className="w-12 h-12 rounded-2xl bg-indigo-500/15 border border-indigo-500/30 flex items-center justify-center text-cyan-400 mx-auto mb-4 font-bold text-xl">
               ✦
             </div>
             <h1 className="text-2xl font-bold text-white tracking-tight">
               Welcome back
             </h1>
-            <p className="text-sm text-slate-400 mt-1.5">
-              Sign in to your OmniRole workspace
+            <p className="text-xs sm:text-sm text-slate-300 mt-1.5">
+              Sign in to your private workspace
             </p>
           </div>
 
           {/* Mode Switcher */}
-          <div className="flex p-1 bg-black/40 border border-white/[0.08] rounded-xl mb-6 text-xs font-semibold">
+          <div className="flex p-1 bg-black/60 border border-white/10 rounded-xl mb-6 text-xs font-semibold relative z-10">
             <button
               type="button"
               onClick={() => { setUseOtpMode(false); setError(null); }}
-              className={`flex-1 py-2 rounded-lg transition-all ${
+              className={`flex-1 py-2.5 rounded-lg transition-all min-h-[40px] ${
                 !useOtpMode
                   ? 'bg-indigo-600 text-white shadow-md shadow-indigo-500/30'
                   : 'text-slate-400 hover:text-white'
@@ -80,7 +82,7 @@ function LoginForm() {
             <button
               type="button"
               onClick={() => { setUseOtpMode(true); setError(null); }}
-              className={`flex-1 py-2 rounded-lg transition-all ${
+              className={`flex-1 py-2.5 rounded-lg transition-all min-h-[40px] ${
                 useOtpMode
                   ? 'bg-indigo-600 text-white shadow-md shadow-indigo-500/30'
                   : 'text-slate-400 hover:text-white'
@@ -91,26 +93,26 @@ function LoginForm() {
           </div>
 
           {error && (
-            <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs mb-5 flex items-start gap-2">
+            <div className="p-3.5 rounded-xl bg-rose-950/40 border border-rose-500/40 text-rose-200 text-xs mb-5 flex items-start gap-2 relative z-10">
               <span className="font-bold">Error:</span>
               <span>{error}</span>
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4 relative z-10">
             <div>
               <label className="block text-xs font-semibold text-slate-200 mb-1.5">
                 Email address
               </label>
               <div className="relative">
-                <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+                <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5 pointer-events-none" />
                 <input
                   type="email"
                   required
                   placeholder="you@example.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-white/[0.08] rounded-xl text-sm text-white placeholder-slate-400 focus:outline-none focus:bg-white focus:border-blue-600 transition-colors"
+                  className="w-full pl-10 pr-4 py-2.5 bg-black/60 border border-white/15 rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/30 transition-colors min-h-[44px]"
                 />
               </div>
             </div>
@@ -130,14 +132,14 @@ function LoginForm() {
                   </button>
                 </div>
                 <div className="relative">
-                  <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+                  <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5 pointer-events-none" />
                   <input
                     type="password"
                     required={!useOtpMode}
                     placeholder="••••••••"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-white/[0.08] rounded-xl text-sm text-white placeholder-slate-400 focus:outline-none focus:bg-white focus:border-blue-600 transition-colors"
+                    className="w-full pl-10 pr-4 py-2.5 bg-black/60 border border-white/15 rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/30 transition-colors min-h-[44px]"
                   />
                 </div>
               </div>
@@ -146,7 +148,7 @@ function LoginForm() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 px-4 rounded-xl btn-cyber-primary text-white font-semibold text-sm transition-all shadow-sm hover:shadow flex items-center justify-center gap-2 disabled:opacity-50"
+              className="w-full py-3 px-4 rounded-xl btn-precision-primary text-white font-semibold text-sm transition-all shadow-sm hover:shadow flex items-center justify-center gap-2 disabled:opacity-50 min-h-[44px]"
             >
               {loading ? (
                 <span>Signing in...</span>
@@ -160,7 +162,7 @@ function LoginForm() {
           </form>
 
           {/* Footer Link */}
-          <div className="mt-8 pt-6 border-t border-slate-100 text-center text-xs text-slate-400">
+          <div className="mt-8 pt-6 border-t border-white/10 text-center text-xs text-slate-400 relative z-10">
             Don't have an account?{' '}
             <Link
               href={`/signup?redirect=${encodeURIComponent(redirectPath)}`}
@@ -173,18 +175,17 @@ function LoginForm() {
 
         {/* Trust badge */}
         <div className="flex items-center justify-center gap-2 mt-6 text-xs text-slate-400">
-          <ShieldCheck className="w-4 h-4 text-slate-400" />
-          <span>Secure authentication with Gmail App Password verification</span>
+          <ShieldCheck className="w-4 h-4 text-emerald-400" />
+          <span>Secure authentication with Gmail OTP verification</span>
         </div>
       </div>
     </div>
   );
 }
 
-
 export default function LoginPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-[#fafafa] flex items-center justify-center text-slate-400">Loading...</div>}>
+    <Suspense fallback={<div className="min-h-screen bg-[#08090d] flex items-center justify-center text-slate-400">Loading...</div>}>
       <LoginForm />
     </Suspense>
   );

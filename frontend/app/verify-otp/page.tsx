@@ -4,7 +4,7 @@ import React, { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
-import { Mail, ArrowRight, ShieldCheck, RefreshCw, CheckCircle2 } from 'lucide-react';
+import { ShieldCheck, ArrowRight, RefreshCw, Mail, CheckCircle2 } from 'lucide-react';
 
 function VerifyOtpForm() {
   const router = useRouter();
@@ -18,51 +18,46 @@ function VerifyOtpForm() {
   const [loading, setLoading] = useState(false);
   const [resending, setResending] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [successMsg, setSuccessMsg] = useState<string | null>(null);
-  const [resendCooldown, setResendCooldown] = useState(0);
+  const [resendSuccess, setResendSuccess] = useState(false);
 
   useEffect(() => {
-    if (resendCooldown > 0) {
-      const timer = setTimeout(() => setResendCooldown(resendCooldown - 1), 1000);
-      return () => clearTimeout(timer);
-    }
-  }, [resendCooldown]);
+    if (emailParam) setEmail(emailParam);
+  }, [emailParam]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleVerify = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    setSuccessMsg(null);
-
-    const cleanCode = otp.trim().replace(/\D/g, '');
-    if (cleanCode.length !== 6) {
+    if (!email.trim()) {
+      setError('Email address is missing.');
+      return;
+    }
+    if (!otp.trim() || otp.trim().length < 6) {
       setError('Please enter the full 6-digit verification code.');
       return;
     }
 
     setLoading(true);
     try {
-      await verifyOtp(email.trim(), cleanCode);
-      setSuccessMsg('Verification successful! Entering your workspace...');
-      setTimeout(() => {
-        router.push(redirectPath);
-      }, 800);
+      await verifyOtp(email.trim(), otp.trim());
+      router.push(redirectPath);
     } catch (err: any) {
-      setError(err.message || 'Invalid or expired verification code.');
+      setError(err.message || 'Invalid or expired code. Please request a new code.');
     } finally {
       setLoading(false);
     }
   };
 
   const handleResend = async () => {
-    if (!email || resendCooldown > 0) return;
-    setResending(true);
+    if (!email.trim() || resending) return;
     setError(null);
+    setResending(true);
+    setResendSuccess(false);
     try {
       await sendOtp(email.trim());
-      setSuccessMsg('A new verification code has been dispatched to your email.');
-      setResendCooldown(45);
+      setResendSuccess(true);
+      setTimeout(() => setResendSuccess(false), 5000);
     } catch (err: any) {
-      setError(err.message || 'Failed to resend code.');
+      setError(err.message || 'Failed to dispatch new OTP.');
     } finally {
       setResending(false);
     }
@@ -71,114 +66,98 @@ function VerifyOtpForm() {
   return (
     <div className="min-h-[75vh] flex items-center justify-center py-10 px-4">
       <div className="w-full max-w-md">
-        {/* Card */}
-        <div className="cyber-card p-8 sm:p-10 border-indigo-500/30">
+        <div className="precision-card p-7 sm:p-9 border-indigo-500/30 relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
+
           {/* Header */}
-          <div className="text-center mb-8">
-            <div className="w-12 h-12 rounded-2xl w-12 h-12 rounded-2xl bg-gradient-to-tr from-indigo-500/20 via-purple-500/20 to-cyan-500/20 border border-indigo-500/40 flex items-center justify-center text-cyan-400 mx-auto mb-4">
-              <Mail className="w-6 h-6" />
+          <div className="text-center mb-8 relative z-10">
+            <div className="w-12 h-12 rounded-2xl bg-indigo-500/15 border border-indigo-500/30 flex items-center justify-center text-cyan-400 mx-auto mb-4 font-bold text-xl">
+              🔐
             </div>
             <h1 className="text-2xl font-bold text-white tracking-tight">
-              Check your email
+              Enter Verification Code
             </h1>
-            <p className="text-sm text-slate-400 mt-2 leading-relaxed">
-              We sent a 6-digit verification code to <br />
-              <strong className="text-white font-semibold">{email || 'your email'}</strong>
+            <p className="text-xs sm:text-sm text-slate-300 mt-1.5">
+              We sent a 6-digit code to{' '}
+              <span className="text-white font-medium break-all">{email || 'your email'}</span>
             </p>
           </div>
 
           {error && (
-            <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs mb-5 flex items-start gap-2">
+            <div className="p-3.5 rounded-xl bg-rose-950/40 border border-rose-500/40 text-rose-200 text-xs mb-5 flex items-start gap-2 relative z-10">
               <span className="font-bold">Error:</span>
               <span>{error}</span>
             </div>
           )}
 
-          {successMsg && (
-            <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs mb-5 flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 shrink-0" />
-              <span>{successMsg}</span>
+          {resendSuccess && (
+            <div className="p-3.5 rounded-xl bg-emerald-950/40 border border-emerald-500/40 text-emerald-300 text-xs mb-5 flex items-center gap-2 relative z-10">
+              <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+              <span>A fresh 6-digit code was dispatched to your inbox.</span>
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <form onSubmit={handleVerify} className="space-y-5 relative z-10">
             <div>
-              <label className="block text-xs font-semibold text-slate-200 mb-2 text-center">
-                Enter 6-digit verification code
+              <label className="block text-xs font-semibold text-slate-300 mb-2 text-center uppercase tracking-wider font-mono">
+                6-Digit Security Code
               </label>
               <input
                 type="text"
                 maxLength={6}
                 autoFocus
-                required
-                placeholder="123456"
+                placeholder="000000"
                 value={otp}
-                onChange={(e) => setOtp(e.target.value)}
-                className="w-full py-3.5 text-center font-mono text-2xl font-bold tracking-[0.5em] bg-slate-50 border border-white/[0.08] rounded-2xl text-white placeholder-slate-300 focus:outline-none focus:bg-white focus:border-blue-600 transition-all"
+                onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
+                className="w-full py-3.5 text-center font-mono text-2xl font-bold tracking-[0.5em] bg-black/60 border border-white/20 rounded-2xl text-white placeholder-slate-600 focus:outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/20 transition-all min-h-[52px]"
               />
             </div>
 
             <button
               type="submit"
-              disabled={loading || otp.trim().length !== 6}
-              className="w-full py-3 px-4 rounded-xl btn-cyber-primary text-white font-semibold text-sm transition-all shadow-sm hover:shadow flex items-center justify-center gap-2 disabled:opacity-50"
+              disabled={loading || otp.length < 6}
+              className="w-full py-3 px-4 rounded-xl btn-precision-primary text-white font-semibold text-sm transition-all shadow-sm hover:shadow flex items-center justify-center gap-2 disabled:opacity-50 min-h-[44px]"
             >
               {loading ? (
                 <span>Verifying code...</span>
               ) : (
                 <>
-                  <span>Verify & Continue</span>
+                  <span>Verify & Enter Workspace</span>
                   <ArrowRight className="w-4 h-4" />
                 </>
               )}
             </button>
           </form>
 
-          {/* Resend Section */}
-          <div className="mt-6 text-center">
-            {resendCooldown > 0 ? (
-              <p className="text-xs text-slate-400">
-                Resend code in <span className="font-semibold text-slate-600">{resendCooldown}s</span>
-              </p>
-            ) : (
-              <button
-                type="button"
-                onClick={handleResend}
-                disabled={resending}
-                className="inline-flex items-center gap-1.5 text-xs text-cyan-400 hover:text-cyan-300 font-semibold"
-              >
-                <RefreshCw className={`w-3.5 h-3.5 ${resending ? 'animate-spin' : ''}`} />
-                <span>Didn't receive the email? Resend code</span>
-              </button>
-            )}
-          </div>
-
-          {/* Footer Back */}
-          <div className="mt-8 pt-6 border-t border-slate-100 text-center text-xs text-slate-400">
-            Wrong email address?{' '}
-            <Link
-              href="/login"
-              className="text-cyan-400 hover:text-cyan-300 font-semibold"
+          {/* Resend actions */}
+          <div className="mt-8 pt-6 border-t border-white/10 flex items-center justify-between text-xs text-slate-400 relative z-10">
+            <span>Didn't receive it?</span>
+            <button
+              type="button"
+              onClick={handleResend}
+              disabled={resending}
+              className="text-cyan-400 hover:text-cyan-300 font-semibold flex items-center gap-1.5 transition-colors"
             >
-              Use a different email
-            </Link>
+              <RefreshCw className={`w-3.5 h-3.5 ${resending ? 'animate-spin' : ''}`} />
+              <span>{resending ? 'Sending...' : 'Resend Code'}</span>
+            </button>
           </div>
         </div>
 
-        {/* Security footnote */}
-        <div className="flex items-center justify-center gap-2 mt-6 text-xs text-slate-400">
-          <ShieldCheck className="w-4 h-4 text-slate-400" />
-          <span>Code sent via Gmail App Password SMTP dispatch</span>
+        {/* Back Link */}
+        <div className="text-center mt-6 text-xs text-slate-400">
+          <Link href={`/login?redirect=${encodeURIComponent(redirectPath)}`} className="hover:text-white transition-colors">
+            &larr; Back to Sign In
+          </Link>
         </div>
       </div>
     </div>
   );
 }
 
-
 export default function VerifyOtpPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-[#fafafa] flex items-center justify-center text-slate-400">Loading...</div>}>
+    <Suspense fallback={<div className="min-h-screen bg-[#08090d] flex items-center justify-center text-slate-400">Loading...</div>}>
       <VerifyOtpForm />
     </Suspense>
   );

@@ -116,6 +116,7 @@ export function getAuthHeaders(extraHeaders: Record<string, string> = {}): Recor
     const token = localStorage.getItem('omni_token');
     if (token) {
       headers['Authorization'] = 'Bearer ' + token;
+      headers['X-Auth-Token'] = token;
     }
     const userId = localStorage.getItem('omni_current_user_id');
     if (userId) {

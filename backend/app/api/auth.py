@@ -10,7 +10,7 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from typing import Optional, Dict, Any
 
-from fastapi import APIRouter, HTTPException, Depends, status, Header
+from fastapi import APIRouter, HTTPException, Depends, status, Header, Response, Request
 from pydantic import BaseModel, EmailStr
 from sqlalchemy.orm import Session
 
@@ -78,19 +78,19 @@ def send_otp_email(to_email: str, otp: str, user_name: str = "User"):
     <head>
       <meta charset="utf-8">
       <style>
-        body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f8fafc; margin: 0; padding: 24px; color: #1e293b; }}
-        .card {{ max-width: 480px; margin: 0 auto; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 36px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); }}
-        .title {{ font-size: 20px; font-weight: 700; color: #0f172a; margin: 0 0 8px 0; }}
-        .sub {{ font-size: 14px; color: #64748b; line-height: 1.5; margin: 0 0 24px 0; }}
-        .otp-box {{ background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 12px; padding: 20px; text-align: center; margin: 24px 0; }}
-        .otp-code {{ font-size: 36px; font-weight: 800; color: #2563eb; letter-spacing: 8px; font-family: ui-monospace, Menlo, Monaco, Consolas, monospace; }}
-        .expiry {{ font-size: 12px; color: #94a3b8; text-align: center; margin-top: 8px; }}
-        .footer {{ border-top: 1px solid #e2e8f0; margin-top: 28px; padding-top: 20px; font-size: 12px; color: #94a3b8; text-align: center; }}
+        body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #08090d; margin: 0; padding: 24px; color: #f1f5f9; }}
+        .card {{ max-width: 480px; margin: 0 auto; background: #0e111a; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 16px; padding: 36px; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4); }}
+        .title {{ font-size: 20px; font-weight: 700; color: #ffffff; margin: 0 0 8px 0; }}
+        .sub {{ font-size: 14px; color: #94a3b8; line-height: 1.5; margin: 0 0 24px 0; }}
+        .otp-box {{ background: rgba(99, 102, 241, 0.1); border: 1px solid rgba(99, 102, 241, 0.3); border-radius: 12px; padding: 20px; text-align: center; margin: 24px 0; }}
+        .otp-code {{ font-size: 36px; font-weight: 800; color: #6366f1; letter-spacing: 8px; font-family: ui-monospace, Menlo, Monaco, Consolas, monospace; }}
+        .expiry {{ font-size: 12px; color: #64748b; text-align: center; margin-top: 8px; }}
+        .footer {{ border-top: 1px solid rgba(255, 255, 255, 0.08); margin-top: 28px; padding-top: 20px; font-size: 12px; color: #64748b; text-align: center; }}
       </style>
     </head>
     <body>
       <div class="card">
-        <div style="margin-bottom: 20px; font-weight: 800; font-size: 18px; color: #0f172a;">
+        <div style="margin-bottom: 20px; font-weight: 800; font-size: 18px; color: #6366f1;">
           ✦ OmniRole AI
         </div>
         <h1 class="title">Verify your email address</h1>
@@ -101,10 +101,10 @@ def send_otp_email(to_email: str, otp: str, user_name: str = "User"):
           <div class="expiry">Expires in 10 minutes</div>
         </div>
 
-        <p style="font-size: 13px; color: #64748b; line-height: 1.5;">If you didn't request this verification code, you can safely ignore this email.</p>
+        <p style="font-size: 13px; color: #94a3b8; line-height: 1.5;">If you didn't request this verification code, you can safely ignore this email.</p>
         
         <div class="footer">
-          OmniRole AI • Specialized AI Architecture
+          OmniRole AI • Autonomous AI Persona Studio
         </div>
       </div>
     </body>
@@ -120,7 +120,6 @@ def send_otp_email(to_email: str, otp: str, user_name: str = "User"):
             server.sendmail(settings.SMTP_FROM_EMAIL, to_email, msg.as_string())
     except Exception as e:
         print(f"[AUTH SMTP ERROR] Failed to send email to {to_email}: {e}")
-        # In case of local SMTP block, we don't crash but log it
         pass
 
 
@@ -230,8 +229,8 @@ def send_otp(req: SendOtpRequest, db: Session = Depends(get_db)):
 
 
 @router.post("/verify-otp")
-def verify_otp(req: VerifyOtpRequest, db: Session = Depends(get_db)):
-    """Verify 6-digit OTP and issue JWT session token."""
+def verify_otp(req: VerifyOtpRequest, response: Response, db: Session = Depends(get_db)):
+    """Verify 6-digit OTP and issue JWT session token and auth cookie."""
     email_clean = req.email.strip().lower()
     otp_clean = req.get_code()
 
@@ -254,6 +253,16 @@ def verify_otp(req: VerifyOtpRequest, db: Session = Depends(get_db)):
 
     token = create_user_token(user)
 
+    # Set cross-browser session cookie
+    response.set_cookie(
+        key="omni_token",
+        value=token,
+        max_age=60 * 60 * 24 * 7,
+        httponly=False,
+        samesite="lax",
+        path="/",
+    )
+
     return {
         "status": "success",
         "token": token,
@@ -271,7 +280,7 @@ def verify_otp(req: VerifyOtpRequest, db: Session = Depends(get_db)):
 
 
 @router.post("/login")
-def login(req: LoginRequest, db: Session = Depends(get_db)):
+def login(req: LoginRequest, response: Response, db: Session = Depends(get_db)):
     """Log in via Password or request OTP."""
     email_clean = req.email.strip().lower()
     user = db.query(User).filter(User.email == email_clean).first()
@@ -297,6 +306,17 @@ def login(req: LoginRequest, db: Session = Depends(get_db)):
             }
 
         token = create_user_token(user)
+
+        # Set cross-browser session cookie
+        response.set_cookie(
+            key="omni_token",
+            value=token,
+            max_age=60 * 60 * 24 * 7,
+            httponly=False,
+            samesite="lax",
+            path="/",
+        )
+
         return {
             "status": "success",
             "token": token,
@@ -327,7 +347,15 @@ def login(req: LoginRequest, db: Session = Depends(get_db)):
     }
 
 
+@router.post("/logout")
+def logout(response: Response):
+    """Log out and clear session cookie."""
+    response.delete_cookie(key="omni_token", path="/")
+    return {"status": "success", "message": "Successfully signed out."}
+
+
 def get_current_user_from_header(
+    request: Request,
     authorization: Optional[str] = Header(None),
     x_auth_token: Optional[str] = Header(None, alias="X-Auth-Token"),
     db: Session = Depends(get_db),
@@ -338,6 +366,8 @@ def get_current_user_from_header(
         token = authorization[7:].strip()
     elif x_auth_token:
         token = x_auth_token.strip()
+    elif request.cookies.get("omni_token"):
+        token = request.cookies.get("omni_token").strip()
 
     if not token:
         raise HTTPException(
