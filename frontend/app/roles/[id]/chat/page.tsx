@@ -676,6 +676,7 @@ export default function ChatWorkspacePage() {
                             color: '#f5f5f4',
                           }
                     }
+                  >
                     <div>{msg.content}</div>
 
                     {msg.image_url && (
