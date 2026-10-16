@@ -54,6 +54,7 @@ class RoleResponse(RoleBase):
 class ChatMessage(BaseModel):
     role: str = Field(..., json_schema_extra={"example": "user"})
     content: str = Field(..., json_schema_extra={"example": "Analyze this methodology."})
+    image_url: Optional[str] = None
 
 
 class ChatRequest(BaseModel):
@@ -62,6 +63,8 @@ class ChatRequest(BaseModel):
     history: Optional[List[ChatMessage]] = None
     temperature: Optional[float] = None
     max_tokens: Optional[int] = None
+    image_url: Optional[str] = None
+    connectors: Optional[List[str]] = None
 
 
 class ChatResponse(BaseModel):
@@ -74,6 +77,22 @@ class ChatResponse(BaseModel):
     tokens_used: Dict[str, int]
     latency_ms: float
     created_at: datetime
+    connector_outputs: Optional[List[Dict[str, Any]]] = None
+
+
+# --- RAG Knowledge Base Schemas ---
+class KnowledgeDocumentCreate(BaseModel):
+    title: Optional[str] = "Uploaded Document"
+    content: str = Field(..., min_length=5, description="Text content to index into RAG vector knowledge base")
+
+
+class KnowledgeDocumentResponse(BaseModel):
+    id: str
+    role_id: str
+    title: str
+    chunks_indexed: int
+    created_at: datetime
+
 
 
 # --- API Key Schemas ---

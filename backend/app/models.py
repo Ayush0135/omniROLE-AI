@@ -88,6 +88,7 @@ class Message(Base):
     conversation_id = Column(String, ForeignKey("conversations.id"), nullable=False)
     sender_type = Column(String, nullable=False)
     content = Column(Text, nullable=False)
+    image_url = Column(Text, nullable=True)
     tokens_used = Column(Integer, default=0)
     latency_ms = Column(Float, default=0.0)
     created_at = Column(DateTime, default=datetime.utcnow)
@@ -135,6 +136,7 @@ class QueryEmbedding(Base):
     id = Column(String, primary_key=True, default=generate_uuid)
     role_id = Column(String, ForeignKey("roles.id"), nullable=False)
     query_text = Column(Text, nullable=False)
+    document_title = Column(String, nullable=True)
     embedding = Column(JSON, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 

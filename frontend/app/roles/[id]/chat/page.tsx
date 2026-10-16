@@ -9,6 +9,7 @@ import {
   sendChatMessage,
   submitFeedbackSignal,
   submitStarRating,
+  addRagDocument,
   Role,
   ChatResponse,
 } from '@/lib/api';
@@ -33,12 +34,19 @@ import {
   Columns,
   Cpu,
   ShieldCheck,
+  ImagePlus,
+  ImageIcon,
+  FileText,
+  X,
+  Upload,
+  CheckCircle2,
 } from 'lucide-react';
 
 interface ChatMessageItem {
   id: string;
   sender: 'user' | 'assistant';
   content: string;
+  image_url?: string;
   tokens_used?: number;
   latency_ms?: number;
   connector_outputs?: any[];
@@ -67,7 +75,66 @@ export default function ChatWorkspacePage() {
   const [arenaResponse, setArenaResponse] = useState<string | null>(null);
   const [arenaLoading, setArenaLoading] = useState(false);
 
+  // Photo / Multimodal Vision State
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [imageFileName, setImageFileName] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Live Grounding Connectors Toggles
+  const [webSearchEnabled, setWebSearchEnabled] = useState(true);
+  const [vectorRagEnabled, setVectorRagEnabled] = useState(true);
+
+  // Custom RAG Knowledge Base Modal State
+  const [ragModalOpen, setRagModalOpen] = useState(false);
+  const [ragTitle, setRagTitle] = useState('');
+  const [ragContent, setRagContent] = useState('');
+  const [indexingRag, setIndexingRag] = useState(false);
+  const [ragSuccessMsg, setRagSuccessMsg] = useState<string | null>(null);
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const handleImageFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      alert('Please upload a valid image file (PNG, JPG, WEBP, GIF)');
+      return;
+    }
+    setImageFileName(file.name);
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      setSelectedImage(event.target?.result as string);
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
+  };
+
+  const handleClearImage = () => {
+    setSelectedImage(null);
+    setImageFileName(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const handleIndexRagKnowledge = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!role || !ragContent.trim() || indexingRag) return;
+    setIndexingRag(true);
+    setRagSuccessMsg(null);
+    try {
+      const res = await addRagDocument(role.slug || role.id, ragTitle.trim() || 'Knowledge Document', ragContent.trim());
+      setRagSuccessMsg(`Indexed ${res.chunks_indexed} knowledge chunks into ${role.name}'s RAG memory!`);
+      setRagContent('');
+      setRagTitle('');
+      setTimeout(() => {
+        setRagModalOpen(false);
+        setRagSuccessMsg(null);
+      }, 1600);
+    } catch (err: any) {
+      alert(`Failed to index RAG knowledge: ${err.message || 'Error'}`);
+    } finally {
+      setIndexingRag(false);
+    }
+  };
 
   useEffect(() => {
     async function loadRole() {
@@ -119,20 +186,23 @@ export default function ChatWorkspacePage() {
         },
       ]);
       setArenaResponse(null);
+      handleClearImage();
     }
   };
 
   const handleSendMessage = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    if (!inputMessage.trim() || !role || loading) return;
+    if ((!inputMessage.trim() && !selectedImage) || !role || loading) return;
 
-    const userText = inputMessage.trim();
+    const userText = inputMessage.trim() || (selectedImage ? "Analyze this uploaded photo and explain its details." : "");
+    const imagePayload = selectedImage;
     setInputMessage('');
+    handleClearImage();
 
     const userMsgId = `user-${Date.now()}`;
     const newMsgList: ChatMessageItem[] = [
       ...messages,
-      { id: userMsgId, sender: 'user', content: userText },
+      { id: userMsgId, sender: 'user', content: userText, image_url: imagePayload || undefined },
     ];
     setMessages(newMsgList);
     setLoading(true);
@@ -143,7 +213,19 @@ export default function ChatWorkspacePage() {
     }
 
     try {
-      const chatRes: ChatResponse = await sendChatMessage(role.slug || role.id, userText, conversationId);
+      const activeConnectors: string[] = [];
+      if (webSearchEnabled) activeConnectors.push('web_search');
+      if (vectorRagEnabled) activeConnectors.push('vector_rag');
+
+      const chatRes: ChatResponse = await sendChatMessage(
+        role.slug || role.id,
+        userText,
+        conversationId,
+        messages.map((m) => ({ role: m.sender, content: m.content, image_url: m.image_url })),
+        undefined,
+        imagePayload || undefined,
+        activeConnectors
+      );
       setConversationId(chatRes.conversation_id);
 
       const assistantMsgId = `assistant-${Date.now()}`;
@@ -594,8 +676,18 @@ export default function ChatWorkspacePage() {
                             color: '#f5f5f4',
                           }
                     }
-                  >
                     <div>{msg.content}</div>
+
+                    {msg.image_url && (
+                      <div className="mt-3">
+                        <img
+                          src={msg.image_url}
+                          alt="Uploaded attachment"
+                          className="max-w-xs sm:max-w-sm max-h-60 rounded-2xl object-cover border border-amber-500/30 shadow-lg cursor-pointer hover:opacity-95 transition-opacity"
+                          onClick={() => window.open(msg.image_url, '_blank')}
+                        />
+                      </div>
+                    )}
 
                     {msg.sender === 'assistant' && msg.id !== 'welcome-msg' && (
                       <div
@@ -708,7 +800,111 @@ export default function ChatWorkspacePage() {
               borderTop: '1px solid rgba(245,158,11,0.1)',
             }}
           >
+            {/* Grounding Controls & Photo Pill */}
+            <div className="max-w-4xl mx-auto flex flex-wrap items-center justify-between gap-2 mb-2.5 text-xs">
+              <div className="flex items-center gap-2">
+                {/* Web Search Toggle Pill */}
+                <button
+                  type="button"
+                  onClick={() => setWebSearchEnabled(!webSearchEnabled)}
+                  className={`px-3 py-1.5 rounded-xl flex items-center gap-2 font-medium border text-xs transition-all ${
+                    webSearchEnabled
+                      ? 'bg-cyan-500/15 border-cyan-500/50 text-cyan-300 shadow-[0_0_14px_rgba(6,182,212,0.25)]'
+                      : 'bg-slate-900/60 border-slate-700/50 text-slate-500 hover:text-slate-400'
+                  }`}
+                  title="Toggle real-time live web search grounding"
+                >
+                  <Globe className="w-3.5 h-3.5" />
+                  <span>Web Search</span>
+                  <span className={`w-1.5 h-1.5 rounded-full ${webSearchEnabled ? 'bg-cyan-400 animate-pulse' : 'bg-slate-600'}`} />
+                </button>
+
+                {/* Vector RAG Toggle Pill */}
+                <button
+                  type="button"
+                  onClick={() => setVectorRagEnabled(!vectorRagEnabled)}
+                  className={`px-3 py-1.5 rounded-xl flex items-center gap-2 font-medium border text-xs transition-all ${
+                    vectorRagEnabled
+                      ? 'bg-violet-500/15 border-violet-500/50 text-violet-300 shadow-[0_0_14px_rgba(139,92,246,0.25)]'
+                      : 'bg-slate-900/60 border-slate-700/50 text-slate-500 hover:text-slate-400'
+                  }`}
+                  title="Toggle semantic RAG vector retrieval from knowledge base"
+                >
+                  <Database className="w-3.5 h-3.5" />
+                  <span>Vector RAG</span>
+                  <span className={`w-1.5 h-1.5 rounded-full ${vectorRagEnabled ? 'bg-violet-400 animate-pulse' : 'bg-slate-600'}`} />
+                </button>
+
+                {/* Add Knowledge to RAG Button */}
+                <button
+                  type="button"
+                  onClick={() => setRagModalOpen(true)}
+                  className="px-3 py-1.5 rounded-xl flex items-center gap-1.5 text-slate-300 hover:text-white bg-slate-800/60 hover:bg-slate-800 border border-slate-700/60 transition-all font-medium text-xs"
+                  title="Upload documents or paste knowledge text to index into role memory"
+                >
+                  <FileText className="w-3.5 h-3.5 text-amber-400" />
+                  <span>+ Add Knowledge</span>
+                </button>
+              </div>
+
+              {/* Photo attached chip */}
+              {selectedImage && (
+                <div className="flex items-center gap-1.5 bg-indigo-500/20 border border-indigo-500/40 text-indigo-300 px-3 py-1 rounded-xl text-xs font-mono">
+                  <ImageIcon className="w-3.5 h-3.5 text-indigo-400" />
+                  <span className="max-w-[140px] truncate">{imageFileName || 'Photo Attached'}</span>
+                  <button
+                    type="button"
+                    onClick={handleClearImage}
+                    className="text-slate-400 hover:text-rose-400 ml-1 p-0.5 transition-colors"
+                    title="Remove attached photo"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Selected Image Thumbnail Preview */}
+            {selectedImage && (
+              <div className="max-w-4xl mx-auto mb-2.5">
+                <div className="relative inline-block group">
+                  <img
+                    src={selectedImage}
+                    alt="Selected attachment preview"
+                    className="w-20 h-20 rounded-2xl object-cover border-2 border-indigo-500/60 shadow-lg shadow-indigo-500/25"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleClearImage}
+                    className="absolute -top-2 -right-2 bg-rose-600 hover:bg-rose-500 text-white p-1 rounded-full shadow-lg transition-transform hover:scale-110"
+                    title="Discard photo"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+              </div>
+            )}
+
             <form onSubmit={handleSendMessage} className="max-w-4xl mx-auto flex items-end gap-3">
+              {/* Hidden file input for photo upload */}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleImageFileSelect}
+              />
+
+              {/* Photo upload trigger button */}
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="p-3.5 rounded-2xl bg-slate-800/60 hover:bg-slate-700/60 text-slate-300 hover:text-white border border-slate-700/60 transition-all flex items-center justify-center shrink-0 shadow-sm"
+                title="Upload photo / screenshot to ask questions"
+              >
+                <ImagePlus className="w-4 h-4 text-indigo-400" />
+              </button>
+
               <div
                 className="flex-1 rounded-2xl p-2 transition-all"
                 style={{
@@ -718,7 +914,7 @@ export default function ChatWorkspacePage() {
               >
                 <textarea
                   rows={2}
-                  placeholder={`Ask ${role.name} anything... (Shift+Enter for newline)`}
+                  placeholder={selectedImage ? `Ask ${role.name} about this photo...` : `Ask ${role.name} anything... (Shift+Enter for newline)`}
                   value={inputMessage}
                   onChange={(e) => setInputMessage(e.target.value)}
                   onKeyDown={handleKeyDown}
@@ -729,7 +925,7 @@ export default function ChatWorkspacePage() {
 
               <button
                 type="submit"
-                disabled={loading || !inputMessage.trim()}
+                disabled={loading || (!inputMessage.trim() && !selectedImage)}
                 className="px-5 py-3.5 rounded-2xl font-bold text-xs text-black flex items-center gap-2 transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-lg shrink-0"
                 style={{
                   background: 'linear-gradient(135deg, #f59e0b, #d97706)',
@@ -784,6 +980,94 @@ export default function ChatWorkspacePage() {
           </div>
         )}
       </div>
+
+      {/* RAG Knowledge Document Upload Modal */}
+      {ragModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
+          <div className="bg-[#0e111d] border border-violet-500/30 rounded-3xl max-w-lg w-full p-6 shadow-2xl relative">
+            <div className="flex items-center justify-between pb-4 mb-4 border-b border-violet-500/20">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-violet-500/20 border border-violet-500/40 flex items-center justify-center text-violet-300">
+                  <Database className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-white">Index Knowledge Document (RAG)</h3>
+                  <p className="text-[11px] text-slate-400">Ground {role?.name} with custom docs, guides, or specs</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setRagModalOpen(false)}
+                className="text-slate-400 hover:text-white p-1 rounded-lg transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {ragSuccessMsg ? (
+              <div className="py-8 flex flex-col items-center justify-center gap-2 text-center text-emerald-400">
+                <CheckCircle2 className="w-8 h-8 animate-bounce" />
+                <p className="text-xs font-semibold">{ragSuccessMsg}</p>
+              </div>
+            ) : (
+              <form onSubmit={handleIndexRagKnowledge} className="space-y-4">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                    Document Title
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g., Project Specifications, API Reference"
+                    value={ragTitle}
+                    onChange={(e) => setRagTitle(e.target.value)}
+                    className="w-full bg-[#14192b] border border-slate-700/60 rounded-xl px-3.5 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-violet-500/60"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                    Knowledge Text / Content
+                  </label>
+                  <textarea
+                    rows={6}
+                    placeholder="Paste guidelines, technical documentation, policies, or data to embed into pgvector..."
+                    value={ragContent}
+                    onChange={(e) => setRagContent(e.target.value)}
+                    required
+                    className="w-full bg-[#14192b] border border-slate-700/60 rounded-xl px-3.5 py-2.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-violet-500/60 font-mono resize-none"
+                  />
+                </div>
+
+                <div className="flex items-center justify-end gap-2.5 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setRagModalOpen(false)}
+                    className="px-4 py-2 rounded-xl text-xs font-medium text-slate-400 hover:text-white hover:bg-slate-800/60 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={indexingRag || !ragContent.trim()}
+                    className="px-5 py-2 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 shadow-lg shadow-violet-500/25 disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2 transition-all"
+                  >
+                    {indexingRag ? (
+                      <>
+                        <Zap className="w-3.5 h-3.5 animate-spin" />
+                        <span>Embedding into Vector DB...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Upload className="w-3.5 h-3.5" />
+                        <span>Index into Vector RAG</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

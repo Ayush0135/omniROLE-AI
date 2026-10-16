@@ -11,10 +11,11 @@ class LLMProvider(abc.ABC):
     async def generate_response(
         self,
         system_prompt: str,
-        messages: List[Dict[str, str]],
+        messages: List[Dict[str, Any]],
         model_name: str,
         temperature: float,
         max_tokens: int,
+        image_url: Optional[str] = None,
     ) -> Dict[str, Any]:
         pass
 
@@ -23,10 +24,11 @@ class MockProvider(LLMProvider):
     async def generate_response(
         self,
         system_prompt: str,
-        messages: List[Dict[str, str]],
+        messages: List[Dict[str, Any]],
         model_name: str,
         temperature: float,
         max_tokens: int,
+        image_url: Optional[str] = None,
     ) -> Dict[str, Any]:
         start_time = time.time()
         last_user_message = ""
@@ -59,19 +61,35 @@ class OpenAICompatibleProvider(LLMProvider):
     async def generate_response(
         self,
         system_prompt: str,
-        messages: List[Dict[str, str]],
+        messages: List[Dict[str, Any]],
         model_name: str,
         temperature: float,
         max_tokens: int,
+        image_url: Optional[str] = None,
     ) -> Dict[str, Any]:
         start_time = time.time()
         
         formatted_messages = [{"role": "system", "content": system_prompt}]
-        for msg in messages:
-            formatted_messages.append({
-                "role": msg.get("role", "user"),
-                "content": msg.get("content", "")
-            })
+        for idx, msg in enumerate(messages):
+            role = msg.get("role", "user")
+            content = msg.get("content", "")
+            msg_image = msg.get("image_url")
+            if not msg_image and image_url and idx == len(messages) - 1 and role == "user":
+                msg_image = image_url
+
+            if msg_image:
+                formatted_messages.append({
+                    "role": role,
+                    "content": [
+                        {"type": "text", "text": content or "Analyze this image and provide comprehensive answers to the user's questions."},
+                        {"type": "image_url", "image_url": {"url": msg_image}}
+                    ]
+                })
+            else:
+                formatted_messages.append({
+                    "role": role,
+                    "content": content
+                })
 
         headers = {"Content-Type": "application/json"}
         if self.api_key:
@@ -123,11 +141,17 @@ class OpenRouterProvider(LLMProvider):
     async def generate_response(
         self,
         system_prompt: str,
-        messages: List[Dict[str, str]],
+        messages: List[Dict[str, Any]],
         model_name: str,
         temperature: float,
         max_tokens: int,
+        image_url: Optional[str] = None,
     ) -> Dict[str, Any]:
+        if image_url or any(m.get("image_url") for m in messages):
+            return await OpenAICompatibleProvider().generate_response(
+                system_prompt, messages, "gemini-2.5-flash", temperature, max_tokens, image_url=image_url
+            )
+
         start_time = time.time()
         
         formatted_messages = [{"role": "system", "content": system_prompt}]
@@ -190,11 +214,17 @@ class GroqProvider(LLMProvider):
     async def generate_response(
         self,
         system_prompt: str,
-        messages: List[Dict[str, str]],
+        messages: List[Dict[str, Any]],
         model_name: str,
         temperature: float,
         max_tokens: int,
+        image_url: Optional[str] = None,
     ) -> Dict[str, Any]:
+        if image_url or any(m.get("image_url") for m in messages):
+            return await OpenAICompatibleProvider().generate_response(
+                system_prompt, messages, "gemini-2.5-flash", temperature, max_tokens, image_url=image_url
+            )
+
         start_time = time.time()
         
         formatted_messages = [{"role": "system", "content": system_prompt}]
@@ -262,12 +292,20 @@ class BedrockProvider(LLMProvider):
     async def generate_response(
         self,
         system_prompt: str,
-        messages: List[Dict[str, str]],
+        messages: List[Dict[str, Any]],
         model_name: str,
         temperature: float,
         max_tokens: int,
+        image_url: Optional[str] = None,
     ) -> Dict[str, Any]:
         start_time = time.time()
+
+        if image_url or any(m.get("image_url") for m in messages):
+            fallback_res = await OpenAICompatibleProvider().generate_response(
+                system_prompt, messages, "gemini-2.5-flash", temperature, max_tokens, image_url=image_url
+            )
+            fallback_res["provider"] = "bedrock_multimodal_vision"
+            return fallback_res
 
         target_model = model_name or "meta.llama3-8b-instruct-v1:0"
         url = f"https://bedrock-runtime.{self.region}.amazonaws.com/model/{target_model}/invoke"

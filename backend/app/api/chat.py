@@ -82,6 +82,7 @@ async def chat_with_role(
         conversation_id=conversation.id,
         sender_type="user",
         content=chat_in.message,
+        image_url=chat_in.image_url,
     )
     db.add(user_msg)
     db.commit()
@@ -90,7 +91,11 @@ async def chat_with_role(
     history_list = []
     if chat_in.history:
         for msg in chat_in.history:
-            history_list.append({"role": msg.role, "content": msg.content})
+            history_list.append({
+                "role": msg.role,
+                "content": msg.content,
+                "image_url": getattr(msg, "image_url", None),
+            })
     else:
         past_msgs = (
             db.query(Message)
@@ -102,6 +107,7 @@ async def chat_with_role(
             history_list.append({
                 "role": "user" if pm.sender_type == "user" else "assistant",
                 "content": pm.content,
+                "image_url": getattr(pm, "image_url", None),
             })
 
     # 4. Process Request via Vector & RL Orchestrator
@@ -112,6 +118,8 @@ async def chat_with_role(
         history=history_list,
         temperature_override=chat_in.temperature,
         max_tokens_override=chat_in.max_tokens,
+        image_url=chat_in.image_url,
+        connectors_override=chat_in.connectors,
     )
 
     # 5. Save Assistant Message
@@ -169,4 +177,5 @@ async def chat_with_role(
         },
         latency_ms=llm_result["latency_ms"],
         created_at=datetime.utcnow(),
+        connector_outputs=llm_result.get("connector_outputs", []),
     )

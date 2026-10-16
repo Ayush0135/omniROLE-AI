@@ -5,7 +5,8 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models import Role
-from app.schemas import RoleCreate, RoleUpdate, RoleResponse
+from app.schemas import RoleCreate, RoleUpdate, RoleResponse, KnowledgeDocumentCreate
+from app.api.deps import get_optional_user
 from app.engine.supabase_sync import SupabaseSyncEngine
 
 from pydantic import BaseModel
@@ -286,4 +287,89 @@ async def delete_role(
 
     await SupabaseSyncEngine.delete_role(role.id)
     return None
+
+
+@router.post("/{id_or_slug}/rag/documents")
+async def add_rag_document(
+    id_or_slug: str,
+    doc_in: KnowledgeDocumentCreate,
+    user_id: Optional[str] = Depends(get_optional_user),
+    db: Session = Depends(get_db),
+):
+    role = (
+        db.query(Role)
+        .filter((Role.id == id_or_slug) | (Role.slug == id_or_slug))
+        .first()
+    )
+    if not role:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"AI Role '{id_or_slug}' not found.",
+        )
+
+    paragraphs = [p.strip() for p in doc_in.content.split("\n\n") if len(p.strip()) > 10]
+    if not paragraphs:
+        paragraphs = [doc_in.content.strip()]
+
+    from app.engine.vector_engine import VectorEngine
+    from app.models import QueryEmbedding
+
+    created_ids = []
+    for p in paragraphs:
+        emb_vec = await VectorEngine.generate_embedding(p)
+        rec = QueryEmbedding(
+            role_id=role.id,
+            query_text=p,
+            document_title=doc_in.title or "Knowledge Document",
+            embedding=emb_vec,
+        )
+        db.add(rec)
+        db.flush()
+        created_ids.append(rec.id)
+
+    db.commit()
+
+    return {
+        "status": "success",
+        "role_id": role.id,
+        "title": doc_in.title or "Knowledge Document",
+        "chunks_indexed": len(created_ids),
+        "message": f"Successfully indexed {len(created_ids)} knowledge chunk(s) into vector RAG memory.",
+    }
+
+
+@router.get("/{id_or_slug}/rag/documents")
+def list_rag_documents(
+    id_or_slug: str,
+    db: Session = Depends(get_db),
+):
+    role = (
+        db.query(Role)
+        .filter((Role.id == id_or_slug) | (Role.slug == id_or_slug))
+        .first()
+    )
+    if not role:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"AI Role '{id_or_slug}' not found.",
+        )
+
+    from app.models import QueryEmbedding
+    embeddings = (
+        db.query(QueryEmbedding)
+        .filter(QueryEmbedding.role_id == role.id)
+        .order_by(QueryEmbedding.created_at.desc())
+        .limit(50)
+        .all()
+    )
+    return [
+        {
+            "id": e.id,
+            "title": getattr(e, "document_title", None) or "Grounding Vector Chunk",
+            "snippet": e.query_text[:160] + "..." if len(e.query_text) > 160 else e.query_text,
+            "created_at": e.created_at,
+        }
+        for e in embeddings
+    ]
+
 

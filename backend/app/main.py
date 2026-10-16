@@ -32,6 +32,8 @@ with engine.connect() as conn:
         "ALTER TABLE role_rl_profiles ADD COLUMN exploration_count INTEGER DEFAULT 0",
         "ALTER TABLE role_rl_profiles ADD COLUMN policy_state TEXT DEFAULT '{}'",
         "ALTER TABLE role_rl_profiles ADD COLUMN last_batch_update DATETIME",
+        "ALTER TABLE messages ADD COLUMN image_url TEXT",
+        "ALTER TABLE query_embeddings ADD COLUMN document_title VARCHAR",
     ]:
         try:
             conn.execute(text(col_sql))

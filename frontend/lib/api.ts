@@ -37,6 +37,7 @@ export interface ChatResponse {
   };
   latency_ms: number;
   created_at: string;
+  connector_outputs?: any[];
 }
 
 export interface APIKey {
@@ -199,25 +200,50 @@ export async function sendChatMessage(
   message: string,
   conversationId?: string,
   history?: any[],
-  apiKey?: string
+  apiKey?: string,
+  imageUrl?: string,
+  connectors?: string[]
 ): Promise<ChatResponse> {
   const headers = getAuthHeaders({ 'Content-Type': 'application/json' });
   if (apiKey) headers['X-API-Key'] = apiKey;
 
+  const payload: Record<string, any> = {
+    message,
+    conversation_id: conversationId,
+    history: history || [],
+  };
+  if (imageUrl) payload.image_url = imageUrl;
+  if (connectors && connectors.length > 0) payload.connectors = connectors;
+
   const res = await fetch(`${API_BASE_URL}/api/v1/roles/${roleSlug}/chat`, {
     method: 'POST',
     headers,
-    body: JSON.stringify({
-      message,
-      conversation_id: conversationId,
-      history: history || [],
-    }),
+    body: JSON.stringify(payload),
   });
   if (!res.ok) throw new Error('Failed to send chat message');
   return res.json();
 }
 
 export const chatWithRole = sendChatMessage;
+
+export async function addRagDocument(roleSlug: string, title: string, content: string): Promise<any> {
+  const res = await fetch(`${API_BASE_URL}/api/v1/roles/${roleSlug}/rag/documents`, {
+    method: 'POST',
+    headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+    body: JSON.stringify({ title, content }),
+  });
+  if (!res.ok) throw new Error('Failed to index RAG knowledge document');
+  return res.json();
+}
+
+export async function fetchRagDocuments(roleSlug: string): Promise<any[]> {
+  const res = await fetch(`${API_BASE_URL}/api/v1/roles/${roleSlug}/rag/documents`, {
+    headers: getAuthHeaders(),
+    cache: 'no-store',
+  });
+  if (!res.ok) return [];
+  return res.json();
+}
 
 export async function fetchAPIKeys(): Promise<APIKey[]> {
   const res = await fetch(`${API_BASE_URL}/api/v1/api-keys`, {
