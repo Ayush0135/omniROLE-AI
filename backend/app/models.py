@@ -245,3 +245,15 @@ class CustomPlan(Base):
     offer_user_email = Column(String, nullable=True)  # Targeted offer for specific email
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime, default=datetime.utcnow)
+
+
+class SearchHistory(Base):
+    __tablename__ = "search_history"
+
+    id = Column(String, primary_key=True, default=generate_uuid)
+    user_id = Column(String, nullable=False, index=True)
+    conversation_id = Column(String, nullable=True)
+    query_text = Column(Text, nullable=False)
+    search_type = Column(String, default="web_search")
+    sources_cited = Column(JSON, default=list)
+    created_at = Column(DateTime, default=datetime.utcnow)

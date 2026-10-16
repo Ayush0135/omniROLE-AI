@@ -4,7 +4,7 @@ from typing import Optional, List, Dict, Any
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from app.database import get_db
-from app.models import Role, Conversation, Message, UsageRecord
+from app.models import Role, Conversation, Message, UsageRecord, SearchHistory
 from app.schemas import ChatRequest, ChatResponse
 from app.engine.orchestrator import SearchOrchestrator
 from app.engine.supabase_sync import SupabaseSyncEngine

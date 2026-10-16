@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
 from app.database import engine, Base, SessionLocal
 from app.models import Role, APIKey, User
-from app.api import roles, chat, api_keys, usage, public_api, rl_orchestration, auth_sync, admin, payments, admin_auth, auth
+from app.api import roles, chat, api_keys, usage, public_api, rl_orchestration, auth_sync, admin, payments, admin_auth, auth, dashboard
 from app.schemas import HealthCheckResponse
 
 # Create database tables
@@ -163,6 +163,7 @@ app.include_router(admin.router, prefix=settings.API_V1_STR)
 app.include_router(payments.router, prefix=settings.API_V1_STR)
 app.include_router(admin_auth.router, prefix=settings.API_V1_STR)
 app.include_router(auth.router, prefix=settings.API_V1_STR)
+app.include_router(dashboard.router, prefix=settings.API_V1_STR)
 app.include_router(public_api.router)
 
 

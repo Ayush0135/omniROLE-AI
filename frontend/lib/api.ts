@@ -538,3 +538,67 @@ export async function sendAdminPromoEmail(payload: {
   }
   return res.json();
 }
+
+
+export interface UserDashboardData {
+  user: {
+    id: string;
+    name: string;
+    email: string;
+    plan: string;
+    avatar_url?: string;
+    is_verified: boolean;
+  };
+  token_metrics: {
+    used: number;
+    limit: number;
+    percentage: number;
+    remaining: number;
+    tier: string;
+  };
+  counts: {
+    my_roles: number;
+    my_conversations: number;
+    my_searches: number;
+    my_api_keys: number;
+  };
+  search_history: Array<{
+    id: string;
+    query_text: string;
+    search_type: string;
+    sources_count: number;
+    sources_cited: any[];
+    conversation_id?: string;
+    created_at?: string;
+  }>;
+  recent_conversations: Array<{
+    id: string;
+    title: string;
+    role_id: string;
+    role_name: string;
+    role_icon: string;
+    message_count: number;
+    updated_at?: string;
+  }>;
+  my_roles: Array<{
+    id: string;
+    name: string;
+    slug: string;
+    description: string;
+    icon: string;
+    model_name: string;
+    connectors: string[];
+    created_at?: string;
+  }>;
+}
+
+export async function fetchUserDashboardStats(): Promise<UserDashboardData> {
+  const res = await fetch(API_BASE_URL + "/api/v1/dashboard/user-stats", {
+    headers: getAuthHeaders(),
+    cache: 'no-store',
+  });
+  if (!res.ok) {
+    throw new Error('Failed to load user dashboard stats');
+  }
+  return res.json();
+}

@@ -77,10 +77,11 @@ class SupabaseSyncEngine:
         await SupabaseSyncEngine.post_to_supabase("messages", data)
 
     @staticmethod
-    async def sync_usage_record(rec_id: str, role_id: str, tokens_prompt: int, tokens_completion: int, tokens_total: int, latency_ms: float, endpoint: str):
+    async def sync_usage_record(rec_id: str, role_id: str, tokens_prompt: int, tokens_completion: int, tokens_total: int, latency_ms: float, endpoint: str, user_id: Optional[str] = None):
         data = {
             "id": rec_id,
             "role_id": role_id,
+            "user_id": user_id,
             "tokens_prompt": tokens_prompt,
             "tokens_completion": tokens_completion,
             "tokens_total": tokens_total,
@@ -88,6 +89,26 @@ class SupabaseSyncEngine:
             "endpoint": endpoint,
         }
         await SupabaseSyncEngine.post_to_supabase("usage_records", data)
+
+    @staticmethod
+    async def sync_search_history(user_id: str, conv_id: Optional[str], query_text: str, search_type: str = "web_search", sources: list = None):
+        data = {
+            "user_id": user_id,
+            "conversation_id": conv_id,
+            "query_text": query_text,
+            "search_type": search_type,
+            "sources_cited": sources or [],
+        }
+        await SupabaseSyncEngine.post_to_supabase("search_history", data)
+
+    @staticmethod
+    async def sync_user_tokens(user_id: str, tokens_used: int):
+        url = f"{SUPABASE_URL}/users?id=eq.{user_id}"
+        try:
+            async with httpx.AsyncClient(timeout=5.0) as client:
+                await client.patch(url, json={"tokens_used_this_month": tokens_used}, headers=HEADERS)
+        except Exception as e:
+            logger.error(f"Supabase User Token Sync Exception: {str(e)}")
 
     @staticmethod
     async def sync_connector_log(log_id: str, role_id: str, connector_type: str, query_params: Dict[str, Any], execution_result: Dict[str, Any], latency_ms: float):
