@@ -13,8 +13,10 @@ import {
   Role,
   ChatResponse,
 } from '@/lib/api';
+import MarkdownRenderer from '@/components/MarkdownRenderer';
 import {
   Bot,
+  BookOpen,
   Send,
   Sparkles,
   ArrowLeft,
@@ -55,7 +57,68 @@ interface ChatMessageItem {
   rl_action?: { response_style: string; temperature: number; connectors: string[] } | null;
 }
 
+
+function SourcesGrid({ connectorOutputs }: { connectorOutputs?: any[] }) {
+  if (!connectorOutputs || connectorOutputs.length === 0) return null;
+  
+  const allSources: any[] = [];
+  connectorOutputs.forEach((c) => {
+    if (c.sources && Array.isArray(c.sources)) {
+      c.sources.forEach((s: any) => allSources.push({ ...s, connectorType: c.connector }));
+    }
+  });
+
+  if (allSources.length === 0) return null;
+
+  return (
+    <div className="mb-4 pb-3 border-b border-slate-700/50">
+      <div className="flex items-center gap-2 mb-2.5 text-xs font-semibold text-slate-300">
+        <BookOpen className="w-3.5 h-3.5 text-cyan-400" />
+        <span>Consulted Sources & Citations ({allSources.length})</span>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+        {allSources.map((s, idx) => {
+          const isWeb = s.type === 'web' || s.connectorType === 'web_search';
+          return (
+            <a
+              key={idx}
+              href={s.url || '#'}
+              target={s.url ? '_blank' : undefined}
+              rel="noopener noreferrer"
+              className="flex flex-col justify-between p-2.5 rounded-xl bg-slate-900/80 hover:bg-slate-800 border border-slate-700/60 hover:border-cyan-500/50 transition-all text-xs group shadow-md"
+              title={s.snippet || s.title}
+            >
+              <div className="flex items-center justify-between gap-1 mb-1.5 text-[11px] text-slate-400">
+                <div className="flex items-center gap-1.5 truncate">
+                  {isWeb ? (
+                    <Globe className="w-3 h-3 text-cyan-400 shrink-0" />
+                  ) : (
+                    <Database className="w-3 h-3 text-violet-400 shrink-0" />
+                  )}
+                  <span className="truncate font-mono text-[10px] text-slate-400">{s.domain || (isWeb ? 'Web' : 'Vector RAG')}</span>
+                </div>
+                <span className="text-[10px] px-1.5 py-0.2 rounded bg-cyan-500/10 border border-cyan-500/30 font-mono text-cyan-300 shrink-0">
+                  [{s.id || idx + 1}]
+                </span>
+              </div>
+              <div className="font-semibold text-slate-200 group-hover:text-cyan-300 line-clamp-2 text-xs leading-snug">
+                {s.title}
+              </div>
+              {s.snippet && (
+                <div className="text-[11px] text-slate-400 line-clamp-1 mt-1 font-sans opacity-75">
+                  {s.snippet}
+                </div>
+              )}
+            </a>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 export default function ChatWorkspacePage() {
+
   const params = useParams();
   const roleIdOrSlug = params.id as string;
 
@@ -661,7 +724,7 @@ export default function ChatWorkspacePage() {
 
                   {/* Message Bubble */}
                   <div
-                    className="p-5 rounded-3xl text-xs leading-relaxed shadow-lg whitespace-pre-wrap font-sans"
+                    className="p-5 rounded-3xl text-xs leading-relaxed shadow-lg font-sans"
                     style={
                       msg.sender === 'user'
                         ? {
@@ -677,7 +740,14 @@ export default function ChatWorkspacePage() {
                           }
                     }
                   >
-                    <div>{msg.content}</div>
+                    {msg.sender === 'assistant' ? (
+                      <>
+                        <SourcesGrid connectorOutputs={msg.connector_outputs} />
+                        <MarkdownRenderer content={msg.content} />
+                      </>
+                    ) : (
+                      <div className="whitespace-pre-wrap text-sm leading-relaxed">{msg.content}</div>
+                    )}
 
                     {msg.image_url && (
                       <div className="mt-3">
@@ -970,7 +1040,7 @@ export default function ChatWorkspacePage() {
                   color: '#f5f5f4',
                 }}
               >
-                {arenaResponse}
+                <MarkdownRenderer content={arenaResponse} />
               </div>
             ) : (
               <div className="py-20 text-center text-xs space-y-2" style={{ color: '#78716c' }}>

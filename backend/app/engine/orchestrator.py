@@ -63,26 +63,57 @@ class SearchOrchestrator:
 
         if connector_outputs:
             conn_summary = []
+            source_counter = 1
             for c in connector_outputs:
                 c_type = c.get("connector", "tool")
                 if c_type == "web_search":
-                    abstract = c.get("abstract", "")
-                    topics = c.get("related_topics", [])
-                    topic_text = f" (Related: {', '.join(topics)})" if topics else ""
-                    conn_summary.append(f"- [Live Web Search Grounding]: {abstract}{topic_text}")
+                    sources = c.get("sources", [])
+                    if sources:
+                        for s in sources:
+                            t = s.get("title", "Web Page")
+                            u = s.get("url", "")
+                            sn = s.get("snippet", "")
+                            dom = s.get("domain", "Web")
+                            conn_summary.append(f"[{source_counter}] (Web Search - {dom}): {t}\n    URL: {u}\n    Excerpt: {sn}")
+                            source_counter += 1
+                    else:
+                        abstract = c.get("abstract", "")
+                        conn_summary.append(f"[{source_counter}] (Live Web Search): {abstract}")
+                        source_counter += 1
                 elif c_type == "vector_rag":
-                    chunks = c.get("retrieved_vector_chunks", [])
-                    if chunks:
-                        chunk_str = "; ".join([f"'{chunk.get('query_text')}' (Score: {chunk.get('similarity')})" for chunk in chunks])
-                        conn_summary.append(f"- [Vector RAG Knowledge Base]: {chunk_str}")
+                    sources = c.get("sources", [])
+                    if sources:
+                        for s in sources:
+                            dt = s.get("title", "Document")
+                            rel = s.get("similarity", 0)
+                            sn = s.get("snippet", "")
+                            conn_summary.append(f"[{source_counter}] (Vector Knowledge Base: {dt}, Relevance: {rel}):\n    Excerpt: {sn}")
+                            source_counter += 1
+                    elif c.get("retrieved_vector_chunks"):
+                        for ch in c.get("retrieved_vector_chunks"):
+                            qt = ch.get("query_text", "")
+                            sc = ch.get("similarity", 0)
+                            conn_summary.append(f"[{source_counter}] (Knowledge Base): {qt} (Score: {sc})")
+                            source_counter += 1
                 elif c_type == "code_executor" and c.get("status") == "success":
-                    conn_summary.append(f"- [Code Execution Result]: {c.get('output', '')}")
+                    out = c.get("output", "")
+                    conn_summary.append(f"- [Sandboxed Code Output]:\n{out}")
                 elif c_type == "database_query":
-                    conn_summary.append(f"- [DB Schema Connector]: Active tables = {c.get('active_tables', [])}")
+                    at = c.get("active_tables", [])
+                    conn_summary.append(f"- [Database Schema Connector]: Active tables = {at}")
+
             if conn_summary:
-                augmented_prompt_parts.append(
-                    f"\n=== ACTIVE CONNECTORS GROUNDING DATA ===\n" + "\n".join(conn_summary)
+                grounding_text = (
+                    "\n=== REAL-TIME GROUNDING KNOWLEDGE & CITATIONS ===\n"
+                    + "\n\n".join(conn_summary)
+                    + "\n\n"
+                    "EXECUTIVE PRESENTATION & CITATION DIRECTIVES:\n"
+                    "1. Structure your entire response professionally using GitHub-flavored Markdown (hierarchical headings ## and ###, bulleted points, bolded key phrases, tables or code blocks where appropriate).\n"
+                    "2. Integrate factual claims with the grounding data provided above, citing sources inline with bracketed notation like [1], [2].\n"
+                    "3. At the end of your response, always append a formatted '### 📚 References & Sources' section listing each cited source with its [number], title, and clickable Markdown link [Title](URL) or document badge.\n"
+                    "4. Maintain an articulate, authoritative, and clean tone suitable for an executive AI copilot."
                 )
+                augmented_prompt_parts.append(grounding_text)
 
         if similar_past_queries:
             vector_context_str = "\n".join([f"- {q['query_text']} (Sim: {q['similarity']})" for q in similar_past_queries])

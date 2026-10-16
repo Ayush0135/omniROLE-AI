@@ -79,7 +79,12 @@ class VectorEngine:
         for r in records:
             if r.embedding:
                 sim = VectorEngine.cosine_similarity(query_vec, r.embedding)
-                scored.append({"query_text": r.query_text, "similarity": round(sim, 4)})
+                scored.append({
+                    "id": r.id,
+                    "document_title": getattr(r, "document_title", None) or "Knowledge Document",
+                    "query_text": r.query_text,
+                    "similarity": round(sim, 4)
+                })
 
         scored.sort(key=lambda x: x["similarity"], reverse=True)
         return scored[:limit]

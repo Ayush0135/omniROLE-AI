@@ -22,28 +22,76 @@ class WebSearchConnector(BaseConnector):
 
     async def execute(self, query: str, context: Dict[str, Any] = None) -> Dict[str, Any]:
         start = time.time()
-        url = f"https://api.duckduckgo.com/?q={query}&format=json&no_html=1&skip_disambig=1"
+        import re
+        import urllib.parse
+
+        sources = []
         try:
-            async with httpx.AsyncClient(timeout=5.0) as client:
-                res = await client.get(url)
+            headers = {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
+            }
+            encoded_query = urllib.parse.quote_plus(query)
+            ddg_url = f"https://html.duckduckgo.com/html/?q={encoded_query}"
+            async with httpx.AsyncClient(timeout=6.0, follow_redirects=True) as client:
+                res = await client.get(ddg_url, headers=headers)
                 if res.status_code == 200:
-                    data = res.json()
-                    abstract = data.get("AbstractText", "")
-                    related = [t.get("Text", "") for t in data.get("RelatedTopics", []) if isinstance(t, dict) and t.get("Text")][:3]
-                    return {
-                        "connector": self.name,
-                        "status": "success",
-                        "abstract": abstract or f"Real-time web grounding for '{query}' active.",
-                        "related_topics": related,
-                        "latency_ms": round((time.time() - start) * 1000, 2),
-                    }
+                    html = res.text
+                    titles = re.findall(r'<a[^>]+class="result__a"[^>]*>(.*?)</a>', html, re.DOTALL)
+                    snippets = re.findall(r'<a[^>]+class="result__snippet"[^>]*>(.*?)</a>', html, re.DOTALL)
+                    urls = re.findall(r'<a[^>]+class="result__snippet"[^>]+href="(.*?)"', html, re.DOTALL)
+
+                    for i in range(min(4, len(titles))):
+                        clean_title = re.sub(r'<[^>]+>', '', titles[i]).strip()
+                        clean_snip = re.sub(r'<[^>]+>', '', snippets[i]).strip() if i < len(snippets) else ''
+                        raw_url = urls[i] if i < len(urls) else ''
+                        
+                        m = re.search(r'uddg=([^&]+)', raw_url)
+                        actual_url = urllib.parse.unquote(m.group(1)) if m else raw_url
+                        
+                        domain = "web"
+                        if "://" in actual_url:
+                            domain = actual_url.split("://")[1].split("/")[0]
+
+                        if clean_title and clean_snip:
+                            sources.append({
+                                "id": i + 1,
+                                "title": clean_title,
+                                "url": actual_url,
+                                "domain": domain,
+                                "snippet": clean_snip,
+                                "type": "web"
+                            })
         except Exception:
             pass
 
+        if not sources:
+            try:
+                api_url = f"https://api.duckduckgo.com/?q={urllib.parse.quote_plus(query)}&format=json&no_html=1&skip_disambig=1"
+                async with httpx.AsyncClient(timeout=4.0) as client:
+                    res = await client.get(api_url)
+                    if res.status_code == 200:
+                        data = res.json()
+                        abstract = data.get("AbstractText", "")
+                        abstract_source = data.get("AbstractSource", "Web")
+                        abstract_url = data.get("AbstractURL", "")
+                        if abstract:
+                            sources.append({
+                                "id": 1,
+                                "title": f"{abstract_source} Overview: {query}",
+                                "url": abstract_url or "https://duckduckgo.com",
+                                "domain": abstract_source,
+                                "snippet": abstract,
+                                "type": "web"
+                            })
+            except Exception:
+                pass
+
+        first_snippet = sources[0]["snippet"] if sources else f"Web grounding active for query: '{query}'"
         return {
             "connector": self.name,
             "status": "success",
-            "abstract": f"Web search grounding query: '{query}'",
+            "sources": sources,
+            "abstract": first_snippet,
             "latency_ms": round((time.time() - start) * 1000, 2),
         }
 
@@ -106,9 +154,20 @@ class VectorRAGConnector(BaseConnector):
         if db and role_id:
             results = await VectorEngine.search_similar_queries(db, role_id, query, limit=3)
 
+        sources = []
+        for idx, chunk in enumerate(results):
+            sources.append({
+                "id": idx + 1,
+                "title": chunk.get("document_title") or f"Knowledge Document #{idx+1}",
+                "snippet": chunk.get("query_text", "")[:300],
+                "similarity": chunk.get("similarity", 0),
+                "type": "document",
+            })
+
         return {
             "connector": self.name,
             "status": "success",
+            "sources": sources,
             "retrieved_vector_chunks": results,
             "latency_ms": round((time.time() - start) * 1000, 2),
         }
