@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
 from app.database import engine, Base, SessionLocal
 from app.models import Role, APIKey, User
-from app.api import roles, chat, api_keys, usage, public_api, rl_orchestration, auth_sync, admin, payments, admin_auth
+from app.api import roles, chat, api_keys, usage, public_api, rl_orchestration, auth_sync, admin, payments, admin_auth, auth
 from app.schemas import HealthCheckResponse
 
 # Create database tables
@@ -34,6 +34,11 @@ with engine.connect() as conn:
         "ALTER TABLE role_rl_profiles ADD COLUMN last_batch_update DATETIME",
         "ALTER TABLE messages ADD COLUMN image_url TEXT",
         "ALTER TABLE query_embeddings ADD COLUMN document_title VARCHAR",
+        "ALTER TABLE users ADD COLUMN password_hash VARCHAR",
+        "ALTER TABLE users ADD COLUMN otp_code VARCHAR",
+        "ALTER TABLE users ADD COLUMN otp_expires_at DATETIME",
+        "ALTER TABLE users ADD COLUMN avatar_url VARCHAR",
+        "ALTER TABLE users ADD COLUMN is_verified BOOLEAN DEFAULT 0",
     ]:
         try:
             conn.execute(text(col_sql))
@@ -154,10 +159,10 @@ app.include_router(chat.router, prefix=settings.API_V1_STR)
 app.include_router(api_keys.router, prefix=settings.API_V1_STR)
 app.include_router(usage.router, prefix=settings.API_V1_STR)
 app.include_router(rl_orchestration.router, prefix=settings.API_V1_STR)
-app.include_router(auth_sync.router, prefix=settings.API_V1_STR)
 app.include_router(admin.router, prefix=settings.API_V1_STR)
 app.include_router(payments.router, prefix=settings.API_V1_STR)
 app.include_router(admin_auth.router, prefix=settings.API_V1_STR)
+app.include_router(auth.router, prefix=settings.API_V1_STR)
 app.include_router(public_api.router)
 
 

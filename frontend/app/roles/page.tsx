@@ -5,10 +5,10 @@ import Link from 'next/link';
 import { RoleCard } from '@/components/RoleCard';
 import { fetchRoles, deleteRole, createRole, Role } from '@/lib/api';
 import { Search, Plus, User, ShieldCheck, Sparkles, Bot, Layers } from 'lucide-react';
-import { useUser } from '@clerk/nextjs';
+import { useAuth } from '@/context/AuthContext';
 
 export default function MyRolesPage() {
-  const { user, isLoaded } = useUser();
+  const { user, loading: authLoading } = useAuth(); const isLoaded = !authLoading;
   const [roles, setRoles] = useState<Role[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');

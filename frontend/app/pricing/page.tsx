@@ -1,13 +1,13 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useUser } from '@clerk/nextjs';
+import { useAuth } from '@/context/AuthContext';
 import { submitPaymentRequest } from '@/lib/api';
 import { Zap, Check, Copy, QrCode, ArrowRight, Sparkles, AlertCircle } from 'lucide-react';
 
 export default function PricingPage() {
-  const { user, isLoaded } = useUser();
-  const userEmail = isLoaded && user ? user.primaryEmailAddress?.emailAddress || '' : '';
+  const { user, loading } = useAuth(); const isLoaded = !loading;
+  const userEmail = isLoaded && user ? user.email || '' : '';
 
   const [selectedPlan, setSelectedPlan] = useState<{ name: string; amount: number } | null>(null);
   const [customPlans, setCustomPlans] = useState<any[]>([]);
@@ -34,7 +34,7 @@ export default function PricingPage() {
 
   const handleOpenPaymentModal = (planName: string, amountInr: number) => {
     setSelectedPlan({ name: planName, amount: amountInr });
-    setEmailInput(user?.primaryEmailAddress?.emailAddress || '');
+    setEmailInput(user?.email || '');
     setUtrNumber('');
     setSuccessMsg('');
     setErrorMsg('');

@@ -4,17 +4,67 @@ from typing import Optional
 from fastapi import Header, HTTPException, Depends, status
 from sqlalchemy.orm import Session
 from app.database import get_db
-from app.models import APIKey
+from app.models import APIKey, User
+from app.api.auth import verify_user_token
 
 
 def get_optional_user(
+    authorization: Optional[str] = Header(None),
     x_user_id: Optional[str] = Header(None, alias="X-User-Id"),
+    x_auth_token: Optional[str] = Header(None, alias="X-Auth-Token"),
     db: Session = Depends(get_db),
 ) -> Optional[str]:
-    """Extract authenticated Clerk user id if present."""
-    if not x_user_id:
-        return None
-    return x_user_id.strip()
+    """Extract authenticated user id if present."""
+    token = None
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization[7:].strip()
+    elif x_auth_token:
+        token = x_auth_token.strip()
+
+    if token:
+        payload = verify_user_token(token)
+        if payload and payload.get("user_id"):
+            return payload.get("user_id")
+
+    if x_user_id and x_user_id.strip():
+        return x_user_id.strip()
+
+    return None
+
+
+def get_current_user(
+    authorization: Optional[str] = Header(None),
+    x_auth_token: Optional[str] = Header(None, alias="X-Auth-Token"),
+    db: Session = Depends(get_db),
+) -> User:
+    """Require valid authenticated User."""
+    token = None
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization[7:].strip()
+    elif x_auth_token:
+        token = x_auth_token.strip()
+
+    if not token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Authentication required. Please sign in.",
+        )
+
+    payload = verify_user_token(token)
+    if not payload:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Session expired or invalid token. Please sign in again.",
+        )
+
+    user = db.query(User).filter(User.id == payload.get("user_id")).first()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="User account not found.",
+        )
+
+    return user
 
 
 def verify_api_key(
@@ -50,5 +100,3 @@ def verify_api_key(
     db.commit()
 
     return api_key_obj
-
-

@@ -33,6 +33,11 @@ class User(Base):
     web_search_allowed = Column(Boolean, default=True)
     code_executor_allowed = Column(Boolean, default=True)
     vector_rag_allowed = Column(Boolean, default=True)
+    password_hash = Column(String, nullable=True)
+    otp_code = Column(String, nullable=True)
+    otp_expires_at = Column(DateTime, nullable=True)
+    avatar_url = Column(String, nullable=True)
+    is_verified = Column(Boolean, default=False)
     created_at = Column(DateTime, default=datetime.utcnow)
 
     roles = relationship("Role", back_populates="user", cascade="all, delete-orphan")

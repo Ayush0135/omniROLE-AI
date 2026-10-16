@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useUser } from '@clerk/nextjs';
+import { useAuth } from '@/context/AuthContext';
 import {
   LayoutDashboard,
   Bot,
@@ -16,100 +16,93 @@ import {
   ChevronLeft,
   ChevronRight,
   Zap,
+  User,
+  LogOut,
 } from 'lucide-react';
-
-import { Logo } from '@/components/Logo';
 
 export const Sidebar = () => {
   const [collapsed, setCollapsed] = useState(false);
   const pathname = usePathname();
-  const { user, isLoaded } = useUser();
+  const { user, loading, logout } = useAuth();
 
-  const displayName = isLoaded && user ? user.fullName || user.username || 'User' : 'Guest Account';
-  const displayEmail = isLoaded && user ? user.primaryEmailAddress?.emailAddress || 'Pro Plan' : 'Free Tier';
-  const initials = isLoaded && user ? (user.firstName?.[0] || 'U') + (user.lastName?.[0] || '') : 'AI';
+  const displayName = !loading && user ? user.name : 'Guest';
+  const displayEmail = !loading && user ? user.email : 'Free Tier';
+  const initials = !loading && user && user.name
+    ? user.name.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase()
+    : 'AI';
 
   const navItems = [
     { label: 'Dashboard', icon: LayoutDashboard, href: '/dashboard' },
     { label: 'My Roles', icon: Bot, href: '/roles' },
     { label: 'Create Role', icon: PlusCircle, href: '/roles/new' },
-    { label: 'API Playground', icon: Terminal, href: '/playground' },
+    { label: 'Playground', icon: Terminal, href: '/playground' },
     { label: 'API Keys', icon: Key, href: '/api-keys' },
-    { label: 'Usage & Analytics', icon: BarChart2, href: '/analytics' },
-    { label: 'Pricing & Plans', icon: Zap, href: '/pricing' },
-    { label: 'Documentation', icon: BookOpen, href: '/docs' },
+    { label: 'Analytics', icon: BarChart2, href: '/analytics' },
     { label: 'Settings', icon: Settings, href: '/settings' },
+    { label: 'Profile', icon: User, href: '/profile' },
   ];
 
   return (
     <aside
-      className={`fixed top-0 left-0 flex flex-col h-screen bg-[#030712]/90 backdrop-blur-2xl border-r border-cyan-500/20 transition-all duration-300 z-30 select-none ${
+      className={`relative flex flex-col justify-between border-r border-slate-200 bg-white transition-all duration-200 z-30 select-none ${
         collapsed ? 'w-20' : 'w-64'
       }`}
+      style={{ minHeight: 'calc(100vh - 4rem)' }}
     >
-      {/* Brand Header */}
-      <div className="flex items-center justify-between h-16 px-4 border-b border-cyan-500/15 bg-[#070e20]/60">
-        <Link href="/" className="flex items-center gap-3 overflow-hidden">
-          <Logo size="md" showText={!collapsed} />
-        </Link>
-        <button
-          onClick={() => setCollapsed(!collapsed)}
-          className="p-1.5 rounded-xl text-slate-400 hover:text-white hover:bg-cyan-500/10 transition-colors border border-transparent hover:border-cyan-500/20"
-        >
-          <ChevronLeft className={`w-4 h-4 transition-transform duration-200 ${collapsed ? 'rotate-180' : ''}`} />
-        </button>
+      {/* Top Section */}
+      <div className="p-4 space-y-6">
+        <div className="flex items-center justify-between">
+          {!collapsed && (
+            <div className="text-xs font-bold text-slate-400 uppercase tracking-wider px-2">
+              Studio Workspace
+            </div>
+          )}
+          <button
+            onClick={() => setCollapsed(!collapsed)}
+            className="p-1.5 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-500 hover:text-slate-900 transition-colors mx-auto"
+            title={collapsed ? 'Expand Sidebar' : 'Collapse Sidebar'}
+          >
+            {collapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+          </button>
+        </div>
+
+        {/* Nav Items */}
+        <nav className="space-y-1">
+          {navItems.map((item) => {
+            const isActive = pathname === item.href;
+            const Icon = item.icon;
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all ${
+                  isActive
+                    ? 'bg-blue-50 text-blue-700 font-bold'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                }`}
+                title={collapsed ? item.label : undefined}
+              >
+                <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-blue-600' : 'text-slate-500'}`} />
+                {!collapsed && <span>{item.label}</span>}
+              </Link>
+            );
+          })}
+        </nav>
       </div>
 
-      {/* Navigation Items */}
-      <div className="flex-1 px-3 py-5 space-y-1.5 overflow-y-auto">
-        {navItems.map((item) => {
-          const isActive = pathname === item.href;
-          const Icon = item.icon;
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={`flex items-center gap-3.5 px-4 py-2.5 rounded-2xl text-xs font-semibold transition-all duration-200 ${
-                isActive
-                  ? 'bg-gradient-to-r from-cyan-500/20 via-indigo-500/15 to-purple-500/10 text-cyan-300 border border-cyan-500/35 shadow-lg shadow-cyan-500/10 font-bold'
-                  : 'text-slate-400 hover:text-slate-100 hover:bg-white/[0.04]'
-              }`}
-              title={collapsed ? item.label : undefined}
-            >
-              <Icon className={`w-4 h-4 shrink-0 transition-colors ${isActive ? 'text-cyan-400' : 'text-slate-400'}`} />
-              {!collapsed && <span>{item.label}</span>}
-            </Link>
-          );
-        })}
-      </div>
-
-      {/* User Profile Footer */}
-      <div className="p-3 border-t border-cyan-500/15 bg-[#070e20]/40">
-        {!collapsed ? (
-          <div className="flex items-center justify-between p-2.5 rounded-2xl bg-slate-900/60 border border-cyan-500/20 hover:border-cyan-500/40 transition-all">
-            <div className="flex items-center gap-2.5 overflow-hidden">
-              <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-cyan-500/25 to-indigo-500/25 border border-cyan-500/40 flex items-center justify-center text-cyan-300 font-bold text-xs shrink-0 uppercase">
-                {initials}
-              </div>
-              <div className="truncate">
-                <div className="text-xs font-bold text-slate-100 truncate">{displayName}</div>
-                <div className="text-[10px] text-slate-400 truncate">{displayEmail}</div>
-              </div>
-            </div>
-            <span className="px-2 py-0.5 text-[10px] font-extrabold rounded-lg bg-cyan-500/20 text-cyan-300 border border-cyan-500/35">
-              PRO
-            </span>
+      {/* Bottom Section: User Info */}
+      <div className="p-4 border-t border-slate-100">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl bg-blue-600 text-white font-bold text-xs flex items-center justify-center shrink-0">
+            {initials}
           </div>
-        ) : (
-          <div className="flex flex-col items-center gap-2">
-            <div
-              className="w-8 h-8 rounded-xl bg-gradient-to-tr from-cyan-500/25 to-indigo-500/25 border border-cyan-500/40 flex items-center justify-center text-cyan-300 font-bold text-xs uppercase"
-              title={displayName}
-            >
-              {initials}
+          {!collapsed && (
+            <div className="flex-1 min-w-0">
+              <div className="text-xs font-bold text-slate-900 truncate">{displayName}</div>
+              <div className="text-[11px] text-slate-500 truncate">{displayEmail}</div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </aside>
   );

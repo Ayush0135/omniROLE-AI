@@ -1,7 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useState, useRef } from 'react';
-import { useUser } from '@clerk/nextjs';
+import { useAuth } from '@/context/AuthContext';
 import { Sparkles, Bell, CheckCircle2, AlertCircle, RefreshCw } from 'lucide-react';
 
 interface NotificationToast {
@@ -26,7 +26,7 @@ const WebSocketContext = createContext<WebSocketContextType>({
 export const useWebSocketStream = () => useContext(WebSocketContext);
 
 export default function RealtimeWebSocketProvider({ children }: { children: React.ReactNode }) {
-  const { user, isLoaded } = useUser();
+  const { user, loading } = useAuth(); const isLoaded = !loading;
   const [isConnected, setIsConnected] = useState(false);
   const [lastEvent, setLastEvent] = useState<any>(null);
   const [toasts, setToasts] = useState<NotificationToast[]>([]);
@@ -41,7 +41,7 @@ export default function RealtimeWebSocketProvider({ children }: { children: Reac
   };
 
   useEffect(() => {
-    const userEmail = user?.primaryEmailAddress?.emailAddress || 'anonymous';
+    const userEmail = user?.email || 'anonymous';
     const clientType = window.location.pathname.startsWith('/admin') ? 'admin' : 'user';
     const wsUrl = `ws://localhost:8000/ws/live?client_type=${clientType}&user_id=${encodeURIComponent(userEmail)}`;
 

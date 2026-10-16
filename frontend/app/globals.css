@@ -1,164 +1,77 @@
-@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Sora:wght@600;700;800&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  --background: #04050d;
-  --foreground: #f8fafc;
-  --cyber-indigo: #6366f1;
-  --cyber-violet: #8b5cf6;
-  --cyber-cyan: #06b6d4;
-  --cyber-fuchsia: #d946ef;
-  --cyber-emerald: #10b981;
-  --surface: #0a0d1a;
-  --surface-glass: rgba(10, 13, 26, 0.75);
-  --border-subtle: rgba(99, 102, 241, 0.15);
-  --border-glow: rgba(99, 102, 241, 0.4);
-  --text-muted: #94a3b8;
-  --text-dim: #64748b;
-  --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
-  --font-heading: 'Space Grotesk', system-ui, sans-serif;
-  --font-mono: 'JetBrains Mono', monospace;
+  --background: #fafafa;
+  --foreground: #0f172a;
+  --surface: #ffffff;
+  --surface-alt: #f1f5f9;
+  --border: #e2e8f0;
+  --border-subtle: #f1f5f9;
+  --primary: #2563eb;
+  --primary-hover: #1d4ed8;
+  --text-primary: #0f172a;
+  --text-secondary: #334155;
+  --text-muted: #64748b;
+  --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-heading: 'Sora', 'Plus Jakarta Sans', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
 }
 
-/* ── Base Body ─────────────────────────────────────────────── */
 body {
   color: var(--foreground);
-  background: var(--background);
-  background-image:
-    /* Futuristic Cyber Grid */
-    linear-gradient(to right, rgba(99, 102, 241, 0.05) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(99, 102, 241, 0.05) 1px, transparent 1px),
-    /* Vibrant Cyber Auroras */
-    radial-gradient(circle 800px at 20% -10%, rgba(99, 102, 241, 0.18), transparent 70%),
-    radial-gradient(circle 700px at 80% 10%, rgba(6, 182, 212, 0.14), transparent 70%),
-    radial-gradient(circle 900px at 50% 90%, rgba(139, 92, 246, 0.12), transparent 70%);
-  background-size:
-    40px 40px,
-    40px 40px,
-    100% 100%,
-    100% 100%,
-    100% 100%;
-  background-attachment: fixed;
+  background-color: #fafafa;
   font-family: var(--font-sans);
   overflow-x: hidden;
-  letter-spacing: -0.015em;
+  -webkit-font-smoothing: antialiased;
 }
 
 h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-heading);
-  letter-spacing: -0.03em;
+  color: var(--text-primary);
+  letter-spacing: -0.025em;
 }
 
-/* ── Cyber Text Gradients ───────────────────────────────────── */
-.gradient-text-cyber {
-  background: linear-gradient(135deg, #38bdf8 0%, #818cf8 40%, #c084fc 80%, #f472b6 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-.gradient-text-cyan {
-  background: linear-gradient(135deg, #22d3ee 0%, #3b82f6 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-.gradient-text-violet {
-  background: linear-gradient(135deg, #a855f7 0%, #6366f1 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-/* ── Cyber Cards ───────────────────────────────────────────── */
-.cyber-card {
-  background: rgba(10, 13, 26, 0.72);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
-  border: 1px solid rgba(99, 102, 241, 0.16);
+/* ── Clean Card & Surface Utilities ────────────────────────── */
+.human-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
   border-radius: 20px;
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.08);
-  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.04), 0 1px 2px -1px rgba(0, 0, 0, 0.04);
+  transition: all 0.2s ease;
 }
 
-.cyber-card:hover {
-  background: rgba(15, 20, 38, 0.85);
-  border-color: rgba(99, 102, 241, 0.4);
-  transform: translateY(-3px);
-  box-shadow: 0 16px 40px 0 rgba(0, 0, 0, 0.6), 0 0 30px rgba(99, 102, 241, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+.human-card:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 6px 16px -4px rgba(0, 0, 0, 0.06), 0 2px 6px -2px rgba(0, 0, 0, 0.04);
+  transform: translateY(-1px);
 }
 
-/* ── Buttons ───────────────────────────────────────────────── */
-.btn-cyber-primary {
-  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #d946ef 100%);
-  color: #ffffff;
-  font-weight: 700;
-  border-radius: 14px;
-  box-shadow: 0 0 24px rgba(99, 102, 241, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.25);
-  transition: all 0.25s ease;
+.glass-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 20px;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.04);
 }
 
-.btn-cyber-primary:hover {
-  transform: scale(1.02);
-  box-shadow: 0 0 36px rgba(139, 92, 246, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.35);
-}
-
-.btn-cyber-secondary {
-  background: rgba(255, 255, 255, 0.04);
-  color: #f1f5f9;
-  border: 1px solid rgba(99, 102, 241, 0.25);
-  border-radius: 14px;
-  backdrop-filter: blur(16px);
-  transition: all 0.25s ease;
-}
-
-.btn-cyber-secondary:hover {
-  background: rgba(99, 102, 241, 0.12);
-  border-color: rgba(99, 102, 241, 0.5);
-  color: #ffffff;
-  transform: scale(1.02);
-}
-
-/* ── Pill Badges ───────────────────────────────────────────── */
-.cyber-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 12px;
-  border-radius: 9999px;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  background: rgba(99, 102, 241, 0.1);
-  border: 1px solid rgba(99, 102, 241, 0.25);
-  color: #a5b4fc;
-}
-
-/* ── Modern Custom Scrollbars ─────────────────────────────── */
+/* ── Custom Scrollbars ─────────────────────────────────────── */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
+
 ::-webkit-scrollbar-track {
-  background: #04050d;
-}
-::-webkit-scrollbar-thumb {
-  background: rgba(99, 102, 241, 0.25);
-  border-radius: 9999px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(139, 92, 246, 0.45);
+  background: #f1f5f9;
 }
 
-/* ── Form Inputs ───────────────────────────────────────────── */
-input, select, textarea {
-  font-family: var(--font-sans);
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 9999px;
 }
-input:focus, select:focus, textarea:focus {
-  outline: none;
-  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.3), 0 0 20px rgba(99, 102, 241, 0.15);
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
 }
